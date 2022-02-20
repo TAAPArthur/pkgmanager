@@ -21,12 +21,13 @@ PKGMAN_AUTO_INSTALL=${PKGMAN_AUTO_INSTALL:-0}
 PKGMAN_FORCE=${PKGMAN_FORCE:-0}
 PKGMAN_TMPDIR="${PKGMAN_TMPDIR:-/tmp/$PKGMAN_NAME}/$$"
 
-[ -z "$PKGMAN_SOURCE" ] || return
 
+############## General helpers
 die() {
     echo "Error: $*" >&2
     exit 2
 }
+
 
 info() {
     echo "$@"
@@ -48,22 +49,6 @@ decompress() {
     esac < "$1"
 }
 
-is_built_pkg() {
-    pkg=$1
-    version=$2
-    if [ -z "$2" ]; then
-        path=$(pkg_find "$pkg" 1)
-        version="$(pkg_get_full_version "$path")"
-    fi
-    archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
-    [ -e "$archive" ]
-    echo "$archive"
-}
-get_built_pkg() {
-    is_built_pkg "$1" "$2" || die "Package not built"
-}
-
-# Takes a url
 download_file() {
     $PKGMAN_DOWNLOAD_CMD "$1"
 }
@@ -103,74 +88,6 @@ download_sources() {
     done
 }
 
-pkg_find() {
-    target=$1
-    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
-    match=1
-    for path in $PKGMAN_PATH; do
-        [ -d "$path" ] || continue
-        for dir in "$path"/*; do
-            if [ "$(basename "$dir")" = "$target" ]; then
-                echo "$dir"
-                [ -z "$2" ] || return 0
-                match=0
-            fi
-        done
-    done
-    return "$match"
-}
-
-# path,
-pkg_get_version() {
-    for file in "$1/version" "$1/.version"; do
-        [ -r "$file" ] || continue
-        read -r version rep <"$file"
-        if [ "${2:-0}" -eq 0 ]; then
-            echo "$version"
-        else
-            echo "${version}_$rep"
-        fi
-        break
-    done
-}
-
-pkg_get_full_version() {
-    pkg_get_version "$1" 1
-}
-# path,
-pkg_get_sources() {
-    path=$1
-    pkg="$(basename "$1")"
-    version=$2
-    for file in "$path/sources" "$path/.sources"; do
-        [ -r "$file" ] || continue
-        sed -e "s/ARCH/$(uname -m)/g" -e "s/VERSION/$version/g" -e "s/PACKAGE/$pkg/g" "$file"
-    done
-}
-
-pkg_get_deps() {
-    path=$1
-    pkg="$(basename "$1")"
-    level=${2:-0}
-    if [ "$level" -ne 0 ]; then
-        for _ in $(seq 1 "$level"); do
-           printf "\t"
-        done
-    fi
-    for file in "$1/depends" "$1/.depends"; do
-        [ -r "$file" ] || continue
-        while read -r depend _; do
-            dep_path=$(pkg_find "$depend")
-            pkg_get_deps "$dep_path" "$((level+1))"
-        done <"$file"
-    done
-}
-pkg_download() {
-    pkg=$1
-    path=$2
-    version=$3
-    pkg_get_sources "$path" "$version" | grep -v "^git+" | download_sources "$pkg"
-}
 extract() {
     debug "Extracting $*"
     fullpath=$1
@@ -188,13 +105,120 @@ extract() {
         ;;
     esac
 }
+
+
+############## Read state of packages in repo
+pkg_read_version() {
+    path=$1
+    full_version=${2:-0}
+    for file in "$path/version" "$path/.version"; do
+        [ -r "$file" ] || continue
+        read -r version rep <"$file"
+        if [ "$full_version" -eq 0 ]; then
+            echo "$version"
+        else
+            echo "${version}_$rep"
+        fi
+        break
+    done
+}
+
+pkg_read_full_version() {
+    pkg_read_version "$1" 1
+}
+
+# Searches "$PKGMAN_PATH" for the specified package
+pkg_find() {
+    target=$1
+    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
+    match=1
+    for path in $PKGMAN_PATH; do
+        [ -d "$path" ] || continue
+        for dir in "$path"/*; do
+            if [ "$(basename "$dir")" = "$target" ]; then
+                echo "$dir"
+                [ -z "$2" ] || return 0
+                match=0
+            fi
+        done
+    done
+    return "$match"
+}
+
+pkg_read_sources() {
+    path=$1
+    pkg="$(basename "$1")"
+    version=$2
+    for file in "$path/sources" "$path/.sources"; do
+        [ -r "$file" ] || continue
+        sed -e "s/ARCH/$(uname -m)/g" -e "s/VERSION/$version/g" -e "s/PACKAGE/$pkg/g" "$file"
+    done
+}
+
+pkg_find_nested_deps() {
+    path=$1
+    pkg="$(basename "$1")"
+    level=${2:-0}
+    if [ "$level" -ne 0 ]; then
+        for _ in $(seq 1 "$level"); do
+           printf "\t"
+        done
+    fi
+    for file in "$1/depends" "$1/.depends"; do
+        [ -r "$file" ] || continue
+        while read -r depend _; do
+            dep_path=$(pkg_find "$depend")
+            pkg_find_nested_deps "$dep_path" "$((level+1))"
+        done <"$file"
+    done
+}
+
+############## Read PKGMANGAGER specific state
+
+# Outputs the built tar; fails if package isn't built
+pkg_is_built() {
+    pkg=$1
+    version=$2
+    if [ -z "$2" ]; then
+        path=$(pkg_find "$pkg" 1)
+        version="$(pkg_read_full_version "$path")"
+    fi
+    archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
+    [ -e "$archive" ]
+    echo "$archive"
+}
+
+# Outputs the built tar; exits if package isn't built
+pkg_get_built() {
+    pkg_is_built "$1" "$2" || die "Package not built"
+}
+
+# Returns success if packages is installed
+pkg_is_installed() {
+    [ -d "$PKGMAN_METADATA_INSTALL_DIR/$1" ]
+}
+
+# Outputs the version of the installed package if package is installed
+pkg_get_installed_version() {
+    [ -e "$PKGMAN_METADATA_INSTALL_DIR/$1/version" ] && cat "$PKGMAN_METADATA_INSTALL_DIR/$1/version"
+}
+
+# Business logic
+
+pkg_download() {
+    pkg=$1
+    path=$2
+    version=$3
+    pkg_read_sources "$path" "$version" | grep -v "^git+" | download_sources "$pkg"
+}
+
 pkg_extract_sources() {
     debug "Extracting sources $*"
     pkg=$1
     dest=$2
     path=$3
     [ -n "$path" ] || path="$(pkg_find "$pkg" 1)"
-    version=$(pkg_get_version "$path")
+    version=$(pkg_read_version "$path")
     GIT_CLONE_DEST="$3"
     pkg_download "$pkg" "$path" "$version" >/dev/null
     pkg_download "$pkg" "$path" "$version" | while read -r fullpath dirname; do
@@ -204,35 +228,15 @@ pkg_extract_sources() {
     unset GIT_CLONE_DEST
 }
 
-action_download() {
-    for pkg do
-        pkg=$1
-        path=$(pkg_find "$pkg" 1)
-        version=$(pkg_get_version "$path")
-        pkg_download "$pkg" "$path" "$version"
-    done
+
+pkg_owns() {
+    filepath=$1
+    manifest=$(grep "$filepath" "$PKGMAN_METADATA_INSTALL_DIR/"*/manifest | head -n1)
+    basename "$(dirname "$manifest")"
 }
 
-get_build_order() {
-    # shellcheck disable=2030
-    for pkg do
-        echo "$(pkg_get_deps "$pkg" | sort -u | wc -l) $pkg"
-    done | sort -n | cut -d" " -f2
 
-    for pkg do
-        echo "$(pkg_get_deps "$pkg" | sort -u | wc -l) $pkg"
-    done >&2
-}
-
-is_installed() {
-    [ -d "$PKGMAN_METADATA_INSTALL_DIR/$1" ]
-}
-
-get_installed_version() {
-    [ -e "$PKGMAN_METADATA_INSTALL_DIR/$1/version" ] && cat "$PKGMAN_METADATA_INSTALL_DIR/$1/version"
-}
-
-pkg_build_pkg_helper() {
+pkg_build_helper() {
     pkg=$1
     path=$(pkg_find "$pkg" 1)
     [ -r "$path/build" ] || return
@@ -253,24 +257,18 @@ pkg_build_pkg_helper() {
         cp -R "$path"/* "$METADATA_DIR"
         # todo hooks
         find "$DEST_DIR" -depth | sed -e "s:$DEST_DIR::" -e '/^$/d' > "$METADATA_DIR/manifest"
-        version="$(pkg_get_full_version "$path")"
+        version="$(pkg_read_full_version "$path")"
         tar -c -C "$DEST_DIR" . > "$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     )
 }
-pkg_build_pkg() {
+
+pkg_build() {
     pkg=$1
     info "building $pkg"
-    pkg_build_pkg_helper "$pkg"
+    pkg_build_helper "$pkg"
     info "built $pkg"
 
 }
-
-pkg_owns() {
-    filepath=$1
-    manifest=$(grep "$filepath" "$PKGMAN_METADATA_INSTALL_DIR/"*/manifest | head -n1)
-    basename "$(dirname "$manifest")"
-}
-
 
 pkg_install_helper() {
     pkg=$1
@@ -303,17 +301,17 @@ pkg_install_helper() {
         mv temp "$PKGMAN_METADATA_CONFLICTS_FILE"
     )
 }
-# tar ball
+
 pkg_install() {
     pkg=$1
     path=$(pkg_find "$pkg" 1)
-    version="$(pkg_get_full_version "$path")"
+    version="$(pkg_read_full_version "$path")"
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     force=${2:-0}
     info "installing $pkg"
 
-    archive="$(get_built_pkg "$pkg" "$version")"
-    if [ "$force" -eq 0 ] && [ "$(get_installed_version "$pkg")" = "$version" ]; then
+    archive="$(pkg_get_built "$pkg" "$version")"
+    if [ "$force" -eq 0 ] && [ "$(pkg_get_installed_version "$pkg")" = "$version" ]; then
         return
     fi
     pkg_install_helper "$pkg" "$archive"
@@ -342,12 +340,12 @@ pkg_remove() {
 
 pkg_build_depedencies() {
     for pkg do
-        pkg_get_deps "$pkg" |
+        pkg_find_nested_deps "$pkg" |
         while read -r dep_pkg; do
-            if ! is_installed "$dep_pkg"; then
-                if ! is_built_pkg "$pkg" >/dev/null; then
+            if ! pkg_is_installed "$dep_pkg"; then
+                if ! pkg_is_built "$pkg" >/dev/null; then
                     pkg_build_depedencies "$dep_pkg"
-                    pkg_build_pkg "$dep_pkg"
+                    pkg_build "$dep_pkg"
                 fi
                 pkg_install "$dep_pkg"
             fi
@@ -355,59 +353,7 @@ pkg_build_depedencies() {
     done
 }
 
-action_build() {
-    # shellcheck disable=2046
-    set -- $(get_build_order "$@")
-    mkdir -p "$PKGMAN_BUILD_CACHE_DIR"
-    for pkg do
-        pkg_build_depedencies "$pkg"
-        pkg_build_pkg "$pkg"
-        #if [ "$PKGMAN_AUTO_INSTALL" -eq 1 ]; then
-        #    pkg_install_pkg "$pkg" 0
-        #fi
-    done
-}
-
-
-action_extract_sources() {
-    for pkg do
-        pkg_extract_sources "$pkg" "${PKG_DESTDIR:-"$PWD/$pkg"}"
-    done
-}
-
-action_install() {
-    for pkg do
-        pkg_install "$pkg"
-    done
-}
-
-action_remove() {
-    for pkg do
-        if [ "$PKGMAN_FORCE" -eq 0 ] && grep -lFxs -- "$pkg" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
-            die "$pkg has dependents"
-        fi
-        pkg_remove "$pkg"
-    done
-}
-
-action_search() {
-    for pkg do
-        pkg_find "$pkg"
-    done
-}
-
-action_owns() {
-    for path do
-        printf "%s\t%s" "$(pkg_owns "$path")" "$path"
-    done
-}
-
-action_list() {
-    for pkg ; do
-        is_installed "$pkg"
-        printf "%s\t%s" "$path" "$(get_installed_version "$pkg" )"
-    done
-}
+############ External commands
 
 action_new() {
     name=$1
@@ -425,9 +371,80 @@ action_new() {
         done
     fi
 }
+
+action_search() {
+    for pkg do
+        pkg_find "$pkg"
+    done
+}
+
+action_download() {
+    for pkg do
+        pkg=$1
+        path=$(pkg_find "$pkg" 1)
+        version=$(pkg_read_version "$path")
+        pkg_download "$pkg" "$path" "$version"
+    done
+}
+
+action_extract_sources() {
+    for pkg do
+        pkg_extract_sources "$pkg" "${PKG_DESTDIR:-"$PWD/$pkg"}"
+    done
+}
+
+
+_get_build_order() {
+    # shellcheck disable=2030
+    for pkg do
+        echo "$(pkg_find_nested_deps "$pkg" | sort -u | wc -l) $pkg"
+    done | sort -n | cut -d" " -f2
+}
+
+action_build() {
+    # shellcheck disable=2046
+    set -- $(_get_build_order "$@")
+    mkdir -p "$PKGMAN_BUILD_CACHE_DIR"
+    for pkg do
+        pkg_build_depedencies "$pkg"
+        pkg_build "$pkg"
+        #if [ "$PKGMAN_AUTO_INSTALL" -eq 1 ]; then
+        #    pkg_install_pkg "$pkg" 0
+        #fi
+    done
+}
+
 action_export() {
-    archive="$(get_built_pkg "$@")"
+    archive="$(pkg_get_built "$@")"
     cp "$archive" "${PKG_DESTDIR:-.}/"
+}
+
+action_install() {
+    for pkg do
+        pkg_install "$pkg"
+    done
+}
+
+action_remove() {
+    for pkg do
+        if [ "$PKGMAN_FORCE" -eq 0 ] && grep -lFxs -- "$pkg" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
+            die "$pkg has dependents"
+        fi
+        pkg_remove "$pkg"
+    done
+}
+
+action_owns() {
+    for path do
+        printf "%s\t%s" "$(pkg_owns "$path")" "$path"
+    done
+}
+
+action_list() {
+    for pkg ; do
+        pkg_is_installed "$pkg"
+        printf "%s\t%s" "$path" "$(pkg_get_installed_version "$pkg" )"
+    done
 }
 
 action=$1
