@@ -4,15 +4,14 @@ $PKG_CMD new A
 echo 'cd $1; touch a b c' >> A/build
 
 $PKG_CMD b A
-
-for file in a b c; do
-    [ ! -e "$file" ]
-done
-
 $PKG_CMD i A
 
+$PKG_CMD r A
+
 for file in a b c; do
-    [ -e "$PKGMAN_ROOT/$file" ]
+    [ ! -e "$PKGMAN_ROOT/$file" ]
 done
 
-$PKG_CMD list A
+if $PKG_CMD l A ; then
+    exit 2
+fi

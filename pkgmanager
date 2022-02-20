@@ -225,7 +225,7 @@ get_build_order() {
 }
 
 is_installed() {
-    [ -f "$PKGMAN_METADATA_INSTALL_DIR/$1" ]
+    [ -d "$PKGMAN_METADATA_INSTALL_DIR/$1" ]
 }
 
 get_installed_version() {
@@ -252,7 +252,7 @@ pkg_build_pkg_helper() {
         mkdir -p "$METADATA_DIR"
         cp -R "$path"/* "$METADATA_DIR"
         # todo hooks
-        find "$DEST_DIR" | sed -e "s:$DEST_DIR::" -e '/^$/d' > "$METADATA_DIR/manifest"
+        find "$DEST_DIR" -depth | sed -e "s:$DEST_DIR::" -e '/^$/d' > "$METADATA_DIR/manifest"
         version="$(pkg_get_full_version "$path")"
         tar -c -C "$DEST_DIR" . > "$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     )
@@ -325,17 +325,18 @@ pkg_remove() {
     pkg=$1
     MANIEFST="$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
     [ -e "$MANIEFST" ] || die "Package not installed"
+
+    info "Removing $pkg"
     while read -r file; do
-        if [ ! -d "$file" ]; then
-            rm -f "$file"
+        echo "FILE $file"
+        if [ -d "$PKGMAN_ROOT/$file" ]; then
+            rmdir "$PKGMAN_ROOT/$file" || true
+        else
+            rm -f "$PKGMAN_ROOT/$file"
         fi
     done < "$MANIEFST"
 
-    while read -r file; do
-        if [ -d "$file" ]; then
-            rm -f "$file"
-        fi
-    done < "$MANIEFST"
+    info "Removed $pkg"
 
 }
 
@@ -382,7 +383,7 @@ action_install() {
 
 action_remove() {
     for pkg do
-        if [ "$PKGMAN_FORCE" -eq 0 ] && ! grep -lFx -- "$1" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
+        if [ "$PKGMAN_FORCE" -eq 0 ] && grep -lFxs -- "$pkg" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
             die "$pkg has dependents"
         fi
         pkg_remove "$pkg"
@@ -402,10 +403,9 @@ action_owns() {
 }
 
 action_list() {
-    for path in "$PKGMAN_METADATA_DIR"/*; do
-        if [ -d "$path" ]; then
-            echo "${path#"$PKGMAN_METADATA_DIR/"}"
-        fi
+    for pkg ; do
+        is_installed "$pkg"
+        printf "%s\t%s" "$path" "$(get_installed_version "$pkg" )"
     done
 }
 

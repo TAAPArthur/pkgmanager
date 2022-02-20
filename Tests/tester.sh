@@ -18,8 +18,9 @@ for test_file in Tests/*-*.sh; do
         mkdir -p "$PKGMAN_ROOT"
 
         printf "%s..." "${f#"$OLDPWD/"}"
-        if ! "$f"; then
+        if ! "$f" > test.out 2>&1; then
             echo failed
+            cat test.out
             exit 1
         else
             echo passed
