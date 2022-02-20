@@ -382,7 +382,7 @@ action_install() {
 
 action_remove() {
     for pkg do
-        if [ "$PKGMAN_FORCE" -eq 0 ] && ! grep -lFx -- "$1" "$PKGMAN_METADATA_DIR/"*/depends ; then
+        if [ "$PKGMAN_FORCE" -eq 0 ] && ! grep -lFx -- "$1" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
             die "$pkg has dependents"
         fi
         pkg_remove "$pkg"
