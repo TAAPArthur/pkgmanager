@@ -338,6 +338,15 @@ pkg_remove() {
 
 }
 
+pkg_list_installed() {
+    for path in "$PKGMAN_METADATA_INSTALL_DIR/"*; do
+        if [ -d "$path" ]; then
+            pkg=${path#"$PKGMAN_METADATA_INSTALL_DIR/"}
+            printf "%s\t%s\n" "$pkg" "$(pkg_get_installed_version "$pkg" )"
+        fi
+    done
+}
+
 pkg_build_depedencies() {
     for pkg do
         pkg_find_nested_deps "$pkg" |
@@ -442,23 +451,20 @@ action_owns() {
 
 action_list() {
     if [ $# -eq 0 ]; then
-        PKGMAN_KEEP_GOING=1
-        [ -d "$PKGMAN_METADATA_INSTALL_DIR" ] || return 0
-        (
-            cd "$PKGMAN_METADATA_INSTALL_DIR/"
-            for pkg in *; do
-                [ ! -d "$pkg" ] || action_list "$pkg"
+        pkg_list_installed
+    else
+        [ -d "$PKGMAN_METADATA_INSTALL_DIR" ] || return 1
+        cd "$PKGMAN_METADATA_INSTALL_DIR/"
+        for pattern ; do
+            echo * | xargs -n1 | grep -x "$pattern" | while read -r pkg; do
+                if pkg_is_installed "$pkg"; then
+                    printf "%s\t%s\n" "$pkg" "$(pkg_get_installed_version "$pkg" )"
+                elif [ "${PKGMAN_KEEP_GOING:-0}" -eq 0 ]; then
+                    die "Could not find $pkg $pattern"
+                fi
             done
-        )
-        exit
+        done
     fi
-    for pkg ; do
-        if pkg_is_installed "$pkg"; then
-            printf "%s\t%s" "$pkg" "$(pkg_get_installed_version "$pkg" )"
-        elif [ ${PKGMAN_KEEP_GOING:-0} -eq 0 ]; then
-            die "Could not find $pkg"
-        fi
-    done
 }
 
 action=$1

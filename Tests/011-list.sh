@@ -13,6 +13,8 @@ $PKG_CMD list A B | grep B
 $PKG_CMD list A B | grep -v C
 $PKG_CMD list A B C | grep A
 
+mkdir temp
+cd temp
 $PKG_CMD list | grep A
 $PKG_CMD list | grep B
 $PKG_CMD list | grep C
