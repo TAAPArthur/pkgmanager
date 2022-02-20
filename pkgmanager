@@ -131,18 +131,25 @@ pkg_read_full_version() {
 pkg_find() {
     target=$1
     { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
-    match=1
     for path in $PKGMAN_PATH; do
         [ -d "$path" ] || continue
-        for dir in "$path"/*; do
-            if [ "$(basename "$dir")" = "$target" ]; then
-                echo "$dir"
-                [ -z "$2" ] || return 0
-                match=0
-            fi
-        done
+        if [ -d "$path/$target" ]; then
+            echo "$path/$target"
+            return 0
+        fi
     done
-    return "$match"
+    return 1;
+}
+
+pkg_search() {
+    target=$1
+    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
+    for path in $PKGMAN_PATH; do
+        [ -d "$path" ] || continue
+        for pkg in "$path"/*; do
+            [ -d "$pkg" ] && echo "$pkg"
+        done
+    done | grep "$target"
 }
 
 pkg_read_sources() {
@@ -180,7 +187,7 @@ pkg_is_built() {
     pkg=$1
     version=$2
     if [ -z "$2" ]; then
-        path=$(pkg_find "$pkg" 1)
+        path=$(pkg_find "$pkg")
         version="$(pkg_read_full_version "$path")"
     fi
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
@@ -217,7 +224,7 @@ pkg_extract_sources() {
     pkg=$1
     dest=$2
     path=$3
-    [ -n "$path" ] || path="$(pkg_find "$pkg" 1)"
+    [ -n "$path" ] || path="$(pkg_find "$pkg")"
     version=$(pkg_read_version "$path")
     GIT_CLONE_DEST="$3"
     pkg_download "$pkg" "$path" "$version" >/dev/null
@@ -238,7 +245,7 @@ pkg_owns() {
 
 pkg_build_helper() {
     pkg=$1
-    path=$(pkg_find "$pkg" 1)
+    path=$(pkg_find "$pkg")
     [ -r "$path/build" ] || return
     [ -x "$path/build" ]
     (
@@ -304,7 +311,7 @@ pkg_install_helper() {
 
 pkg_install() {
     pkg=$1
-    path=$(pkg_find "$pkg" 1)
+    path=$(pkg_find "$pkg")
     version="$(pkg_read_full_version "$path")"
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     force=${2:-0}
@@ -381,9 +388,15 @@ action_new() {
     fi
 }
 
-action_search() {
+
+action_find() {
     for pkg do
         pkg_find "$pkg"
+    done
+}
+action_search() {
+    for pattern do
+        pkg_search "$pattern"
     done
 }
 
@@ -479,5 +492,6 @@ case "$action" in
     o|owns) action_owns "$@";;
     r|remove) action_remove "$@";;
     s|search) action_search "$@";;
+    f|find) action_find "$@";;
     n|new) action_new "$@";;
 esac
