@@ -441,9 +441,23 @@ action_owns() {
 }
 
 action_list() {
+    if [ $# -eq 0 ]; then
+        PKGMAN_KEEP_GOING=1
+        [ -d "$PKGMAN_METADATA_INSTALL_DIR" ] || return 0
+        (
+            cd "$PKGMAN_METADATA_INSTALL_DIR/"
+            for pkg in *; do
+                [ ! -d "$pkg" ] || action_list "$pkg"
+            done
+        )
+        exit
+    fi
     for pkg ; do
-        pkg_is_installed "$pkg"
-        printf "%s\t%s" "$path" "$(pkg_get_installed_version "$pkg" )"
+        if pkg_is_installed "$pkg"; then
+            printf "%s\t%s" "$pkg" "$(pkg_get_installed_version "$pkg" )"
+        elif [ ${PKGMAN_KEEP_GOING:-0} -eq 0 ]; then
+            die "Could not find $pkg"
+        fi
     done
 }
 
