@@ -441,9 +441,6 @@ action_build() {
     for pkg do
         pkg_build_depedencies "$pkg"
         pkg_build "$pkg"
-        #if [ "$PKGMAN_AUTO_INSTALL" -eq 1 ]; then
-        #    pkg_install_pkg "$pkg" 0
-        #fi
     done
 }
 
@@ -511,15 +508,15 @@ action=$1
 shift
 case "$action" in
     b|build) action_build "$@";;
-    e|extract) action_extract_sources "$@";;
-    export)    action_export "$@";;
     d|download) action_download "$@";;
+    export)    action_export "$@";;
+    e|extract) action_extract_sources "$@";;
+    f|find) action_find "$@";;
     i|install) action_install "$@";;
     l|list) action_list "$@";;
+    n|new) action_new "$@";;
     o|owns) action_owns "$@";;
     r|remove) action_remove "$@";;
     s|search) action_search "$@";;
-    f|find) action_find "$@";;
-    n|new) action_new "$@";;
     u|update) action_update "$@";;
 esac
