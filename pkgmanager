@@ -141,6 +141,16 @@ pkg_find() {
     return 1;
 }
 
+pkg_fetch() {
+    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
+
+    for path in $PKGMAN_PATH; do
+        if [ -d "$path/.git" ]; then
+            git pull --rebase || die "Failed to pull $path"
+        fi
+    done
+}
+
 pkg_search() {
     target=$1
     { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
@@ -447,6 +457,22 @@ action_install() {
     done
 }
 
+pkg_determine_out_of_date() {
+    pkg_list_installed | while read -r pkg version; do
+        if [ "$version" != "$(pkg_read_full_version "$pkg")" ]; then
+            echo "$pkg"
+        fi
+    done
+}
+
+action_update() {
+    pkg_fetch
+    # shellcheck disable=2046
+    set -- $(pkg_determine_out_of_date)
+    action_build "$@"
+    action_install "$@"
+}
+
 action_remove() {
     for pkg do
         if [ "$PKGMAN_FORCE" -eq 0 ] && grep -lFxs -- "$pkg" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
@@ -494,4 +520,5 @@ case "$action" in
     s|search) action_search "$@";;
     f|find) action_find "$@";;
     n|new) action_new "$@";;
+    u|update) action_update "$@";;
 esac
