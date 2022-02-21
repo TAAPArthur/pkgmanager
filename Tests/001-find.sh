@@ -1,5 +1,4 @@
-#!/bin/sh -e
-
+#!/bin/sh -ex
 ! $PKG_CMD f A || exit 1
 
 $PKG_CMD new A
