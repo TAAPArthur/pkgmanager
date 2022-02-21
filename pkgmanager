@@ -106,6 +106,15 @@ extract() {
     esac
 }
 
+for_each_in_path() {
+    dir=$2
+    # shellcheck disable=2086
+    { IFS=:; set -- ${1:-"$PKGMAN_PATH"}; unset IFS; }
+    for path ; do
+        [ -e "$path/$dir" ] || continue
+        echo "$path/$dir"
+    done
+}
 
 ############## Read state of packages in repo
 pkg_read_version() {
@@ -130,32 +139,20 @@ pkg_read_full_version() {
 # Searches "$PKGMAN_PATH" for the specified package
 pkg_find() {
     target=$1
-    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
-    for path in $PKGMAN_PATH; do
-        [ -d "$path" ] || continue
-        if [ -d "$path/$target" ]; then
-            echo "$path/$target"
-            return 0
-        fi
-    done
-    return 1;
+    pkg="$(for_each_in_path "$PKGMAN_PATH" "$target" | head -n1)"
+    [ -n "$pkg" ] || return 1
+    echo "$pkg"
 }
 
 pkg_fetch() {
-    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
-
-    for path in $PKGMAN_PATH; do
-        if [ -d "$path/.git" ]; then
-            git pull --rebase || die "Failed to pull $path"
-        fi
+    for_each_in_path "$PKGMAN_PATH" ".git" | while read -r path; do
+        (cd "$path" && git pull --rebase ) || die "Failed to pull $path"
     done
 }
 
 pkg_search() {
     target=$1
-    { IFS=:; set -- "$PKGMAN_PATH"; unset IFS; }
-    for path in $PKGMAN_PATH; do
-        [ -d "$path" ] || continue
+    for_each_in_path "$PKGMAN_PATH" | while read -r path; do
         for pkg in "$path"/*; do
             [ -d "$pkg" ] && echo "$pkg"
         done
