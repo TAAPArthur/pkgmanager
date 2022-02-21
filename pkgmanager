@@ -21,6 +21,7 @@ PKGMAN_AUTO_INSTALL=${PKGMAN_AUTO_INSTALL:-0}
 PKGMAN_FORCE=${PKGMAN_FORCE:-0}
 PKGMAN_TMPDIR="${PKGMAN_TMPDIR:-/tmp/$PKGMAN_NAME}/$$"
 
+PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/pkgman/}"
 
 ############## General helpers
 die() {
@@ -116,6 +117,17 @@ for_each_in_path() {
     done
 }
 
+# hooks
+run_hook(){
+    for_each_in_path "$PKGMAN_HOOK_PATH" | while read -r path; do
+        for script in "$path/"*.sh; do
+            if [ -x "$script" ]; then
+                . "$script"
+            fi
+        done
+    done
+}
+
 ############## Read state of packages in repo
 pkg_read_version() {
     path=$1
@@ -146,7 +158,16 @@ pkg_find() {
 
 pkg_fetch() {
     for_each_in_path "$PKGMAN_PATH" ".git" | while read -r path; do
-        (cd "$path" && git pull --rebase ) || die "Failed to pull $path"
+        (
+            cd "$path/.."
+
+            run_hook pre-fetch
+
+            git pull --rebase
+
+            run_hook post-fetch
+
+        ) || die "Failed to pull $path"
     done
 }
 
@@ -265,11 +286,18 @@ pkg_build_helper() {
         mkdir -p "$BUILD_DIR" "$DEST_DIR"
         pkg_extract_sources "$pkg" "$BUILD_DIR" "$path"
         cd "$BUILD_DIR"
+
+        run_hook pre-build "$pkg"
+
         # actually build
         "$path/build" "$DEST_DIR"
         METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
         mkdir -p "$METADATA_DIR"
         cp -R "$path"/* "$METADATA_DIR"
+
+        cd "$DEST_DIR"
+        run_hook post-build "$pkg"
+
         # todo hooks
         find "$DEST_DIR" -depth | sed -e "s:$DEST_DIR::" -e '/^$/d' > "$METADATA_DIR/manifest"
         version="$(pkg_read_full_version "$path")"
@@ -297,6 +325,9 @@ pkg_install_helper() {
         MANIEFST="$RELATIVE_METADATA_DIR/manifest"
         cd "$WORKING_DIR"
         tar -xf "$archive" "$MANIEFST"
+
+        run_hook pre-install "$pkg"
+
         TEMP_CONFLICTS=conficts
         touch "$TEMP_CONFLICTS"
         while read -r file; do
@@ -314,6 +345,8 @@ pkg_install_helper() {
         touch "$PKGMAN_METADATA_CONFLICTS_FILE"
         grep -v "$pkg " "$PKGMAN_METADATA_CONFLICTS_FILE" | sort -u - "$TEMP_CONFLICTS" > temp
         mv temp "$PKGMAN_METADATA_CONFLICTS_FILE"
+
+        run_hook post-install "$pkg"
     )
 }
 
