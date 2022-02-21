@@ -186,6 +186,7 @@ pkg_find_nested_deps() {
         while read -r depend _; do
             dep_path=$(pkg_find "$depend")
             pkg_find_nested_deps "$dep_path" "$((level+1))"
+            echo "$depend"
         done <"$file"
     done
 }
@@ -201,7 +202,7 @@ pkg_is_built() {
         version="$(pkg_read_full_version "$path")"
     fi
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
-    [ -e "$archive" ]
+    [ -e "$archive" ] || return 2
     echo "$archive"
 }
 
@@ -369,7 +370,7 @@ pkg_build_depedencies() {
         pkg_find_nested_deps "$pkg" |
         while read -r dep_pkg; do
             if ! pkg_is_installed "$dep_pkg"; then
-                if ! pkg_is_built "$pkg" >/dev/null; then
+                if ! pkg_is_built "$dep_pkg" >/dev/null; then
                     pkg_build_depedencies "$dep_pkg"
                     pkg_build "$dep_pkg"
                 fi
