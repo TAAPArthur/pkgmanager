@@ -193,7 +193,8 @@ pkg_read_sources() {
 pkg_find_nested_deps() {
     path=$1
     pkg="$(basename "$1")"
-    level=${2:-0}
+    max_level=${2:-256}
+    level=${3:-0}
     if [ "$level" -ne 0 ]; then
         for _ in $(seq 1 "$level"); do
            printf "\t"
@@ -202,11 +203,17 @@ pkg_find_nested_deps() {
     for file in "$1/depends" "$1/.depends"; do
         [ -r "$file" ] || continue
         while read -r depend _; do
-            dep_path=$(pkg_find "$depend")
-            pkg_find_nested_deps "$dep_path" "$((level+1))"
             echo "$depend"
+            if [ "$max_level" -ne "$level" ]; then
+                dep_path=$(pkg_find "$depend")
+                pkg_find_nested_deps "$dep_path" "$max_level" "$((level+1))"
+            fi
         done <"$file"
     done
+}
+
+pkg_find_deps() {
+    pkg_find_nested_deps "$1" 0 0
 }
 
 ############## Read PKGMANGAGER specific state
@@ -236,7 +243,10 @@ pkg_is_installed() {
 
 # Outputs the version of the installed package if package is installed
 pkg_get_installed_version() {
-    [ -e "$PKGMAN_METADATA_INSTALL_DIR/$1/version" ] && cat "$PKGMAN_METADATA_INSTALL_DIR/$1/version"
+    [ -e "$PKGMAN_METADATA_INSTALL_DIR/$1/version" ] && {
+        read -r v r < "$PKGMAN_METADATA_INSTALL_DIR/$1/version"
+        echo "${v}_${r}"
+    }
 }
 
 # Business logic
@@ -355,13 +365,9 @@ pkg_install() {
     path=$(pkg_find "$pkg")
     version="$(pkg_read_full_version "$path")"
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
-    force=${2:-0}
     info "installing $pkg"
 
     archive="$(pkg_get_built "$pkg" "$version")"
-    if [ "$force" -eq 0 ] && [ "$(pkg_get_installed_version "$pkg")" = "$version" ]; then
-        return
-    fi
     pkg_install_helper "$pkg" "$archive"
 
     info "installed $pkg"
@@ -387,10 +393,12 @@ pkg_remove() {
 }
 
 pkg_list_installed() {
-    for path in "$PKGMAN_METADATA_INSTALL_DIR/"*; do
+    [ $# -eq 0 ] && set -- "$PKGMAN_METADATA_INSTALL_DIR/"*
+    for path ; do
         if [ -d "$path" ]; then
             pkg=${path#"$PKGMAN_METADATA_INSTALL_DIR/"}
-            printf "%s\t%s\n" "$pkg" "$(pkg_get_installed_version "$pkg" )"
+            read -r v r < "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version"
+            printf "%s\t%s\n" "$pkg" "$v $r"
         fi
     done
 }
@@ -412,23 +420,14 @@ pkg_build_depedencies() {
 
 ############ External commands
 
-action_new() {
-    name=$1
-    version=${2:-1}
-    [ ! -e "$name" ] || die "Directory already exists"
-    mkdir "$name"
-    echo "$version 1"   > "$name/version"
-    echo "#!/bin/sh -e" > "$name/build"
-    chmod +x "$name/build"
-
-    if [ $# -gt 2 ]; then
-        shift 2
-        for source do
-            echo "$source"     >> "$name/sources"
-        done
-    fi
+action_fork() {
+    for pkg do
+        [ ! -d "$pkg" ]
+        path=$(pkg_find "$pkg")
+        mkdir "$pkg"
+        cp -R "$path" "$pkg"
+    done
 }
-
 
 action_find() {
     for pkg do
@@ -464,6 +463,14 @@ _get_build_order() {
     done | sort -n | cut -d" " -f2
 }
 
+action_depends () {
+    pkg_find_deps "$1"
+}
+
+action_tree () {
+    pkg_find_nested_deps "$1"
+}
+
 action_build() {
     # shellcheck disable=2046
     set -- $(_get_build_order "$@")
@@ -486,24 +493,35 @@ action_install() {
 }
 
 pkg_determine_out_of_date() {
-    pkg_list_installed | while read -r pkg version; do
-        if [ "$version" != "$(pkg_read_full_version "$pkg")" ]; then
+    debug HERE
+    pkg_list_installed | while read -r pkg v r; do
+        debug "$v $r" != "$(pkg_read_full_version "$pkg")"
+        if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
             echo "$pkg"
         fi
     done
 }
 
-action_update() {
+action_outdated() {
+    pkg_determine_out_of_date
+}
+action_fetch() {
     pkg_fetch
-    # shellcheck disable=2046
-    set -- $(pkg_determine_out_of_date)
-    action_build "$@"
-    action_install "$@"
+}
+
+pkg_revdepends() {
+    grep -lFxs -- "$1" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"
+}
+
+action_revdepends() {
+    for pkg do
+        pkg_revdepends "$pkg"
+    done
 }
 
 action_remove() {
     for pkg do
-        if [ "$PKGMAN_FORCE" -eq 0 ] && grep -lFxs -- "$pkg" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"; then
+        if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -v "^__"; then
             die "$pkg has dependents"
         fi
         pkg_remove "$pkg"
@@ -525,7 +543,7 @@ action_list() {
         for pattern ; do
             echo * | xargs -n1 | grep -x "$pattern" | while read -r pkg; do
                 if pkg_is_installed "$pkg"; then
-                    printf "%s\t%s\n" "$pkg" "$(pkg_get_installed_version "$pkg" )"
+                    pkg_list_installed "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
                 elif [ "${PKGMAN_KEEP_GOING:-0}" -eq 0 ]; then
                     die "Could not find $pkg $pattern"
                 fi
@@ -534,19 +552,60 @@ action_list() {
     fi
 }
 
+action_manifest() {
+    for pkg do
+        cat "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
+    done
+}
+
+pkg_ext() {
+    name=$1
+    for_each_in_path "$PATH" | while read -r path; do
+        if [ -x "$path/$name" ]; then
+            printf "%s\t%s\n" "$name" "$path/$name"
+            return
+        else
+            for executable in "$path/$name"*; do
+                if [ -x "$executable" ]; then
+                    printf "%s\t%s\n" "${executable#"$path/"}" "$executable"
+                fi
+            done
+        fi
+    done
+}
+
+action_ext() {
+    if [ $# -eq 0 ]; then
+        pkg_ext pkgmanager- | sort -u -k1
+    else
+        name="pkgmanager-$1"
+        shift
+        path=$(pkg_ext "$name" | head -n1 | cut -f1)
+        [ -n "$path" ]
+        debug "Using $path"
+        exec $path "$@"
+    fi
+}
+
 action=$1
 shift
 case "$action" in
     b|build) action_build "$@";;
-    d|download) action_download "$@";;
+    do*) action_download "$@";;
     export)    action_export "$@";;
     e|extract) action_extract_sources "$@";;
-    f|find) action_find "$@";;
+    d|depends) action_depends "$@";;
+    t|tree) action_tree "$@";;
+    find) action_find "$@";;
+    fetch) action_fetch "$@";;
     i|install) action_install "$@";;
     l|list) action_list "$@";;
-    n|new) action_new "$@";;
+    f|fork) action_fork "$@";;
     o|owns) action_owns "$@";;
+    outdated) action_outdated "$@";;
     r|remove) action_remove "$@";;
+    rev) action_remove "$@";;
     s|search) action_search "$@";;
-    u|update) action_update "$@";;
+    list-ext) action_ext;;
+    *) action_ext "$action" "$@" ;;
 esac

@@ -1,14 +1,7 @@
 #!/bin/sh -e
 
-for i in $(seq 1 12); do
-    $PKG_CMD new "$i"
-    for n in $(seq 1 "$((i-1))"); do
-        if [ "$((i%n))" -eq 0 ]; then
-            echo "$n" >> "$i/depends"
-        fi
-    done
-done
 
+create_factor_packages
 
 # poison 7
 echo "exit 2" >> 7/build

@@ -1,5 +1,5 @@
 #!/bin/sh -ex
-! $PKG_CMD f A || exit 1
+! $PKG_CMD find A || exit 1
 
 $PKG_CMD new A
-$PKG_CMD f A
+$PKG_CMD find A

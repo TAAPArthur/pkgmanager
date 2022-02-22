@@ -1,0 +1,25 @@
+#!/bin/sh -e
+
+action_ext() {
+    name=$1
+    for_each_in_path | while read -r path; do
+        if [ -x "$path/$name" ]; then
+            echo "$name"
+        fi
+        for executable in "$path/$name"*; do
+            if [ -x "$path/$name" ]; then
+                echo "${executable#"$path/"}"
+            fi
+        done
+    done
+}
+
+if [ $# -eq 0 ]; then
+    action_ext pkgmanager- | sort -u
+else
+    path=$(action_ext "$1" | head -n1)
+    [ -z "$path" ]
+    shift
+    $path "$@"
+
+fi

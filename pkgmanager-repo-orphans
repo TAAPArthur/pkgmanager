@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+set -x
+pkgmanager list | while read -r pkg _; do
+    if ! pkgmanager find "$pkg" >/dev/null; then
+        echo "$pkg"
+    fi
+done

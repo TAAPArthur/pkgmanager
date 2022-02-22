@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 $PKG_CMD update
 
@@ -13,6 +13,7 @@ echo "" > A/build
 echo "1 2" > A/version
 
 $PKG_CMD update
+
 $PKG_CMD list A
 $PKG_CMD list A | grep "1 2"
 

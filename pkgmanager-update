@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+echo starting
+pkgmanager fetch
+# shellcheck disable=2046
+set -- $(pkgmanager outdated)
+
+echo $@
+pkgmanager build "$@"
+pkgmanager install "$@"
+
+echo DONE

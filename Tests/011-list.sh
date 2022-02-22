@@ -15,7 +15,9 @@ $PKG_CMD list A B C | grep A
 
 mkdir temp
 cd temp
-$PKG_CMD list | grep A
-$PKG_CMD list | grep B
-$PKG_CMD list | grep C
+$PKG_CMD list A | grep A
+$PKG_CMD list A | grep -v B
+$PKG_CMD list   | grep A
+$PKG_CMD list   | grep B
+$PKG_CMD list   | grep C
 

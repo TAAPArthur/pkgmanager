@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+name=$1
+version=${2:-1}
+[ ! -e "$name" ] || die "Directory already exists"
+mkdir "$name"
+echo "$version 1"   > "$name/version"
+echo "#!/bin/sh -e" > "$name/build"
+chmod +x "$name/build"
+
+if [ $# -gt 2 ]; then
+    shift 2
+    for source do
+        echo "$source"     >> "$name/sources"
+    done
+fi

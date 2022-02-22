@@ -1,0 +1,25 @@
+#!/bin/sh -e
+# Shows help info
+
+cat <<EOF
+    build      --  build package
+    depends    --  List immediate depedencies of package
+    download   --  download remote sourcs
+    export     --  Copy built tar ball to current directory
+    extract    --  Extract sources into current directory
+    fetch      --  update repo
+    find       --  search for a package by literal name
+    fork       --  Copy the package info into current directory
+    install    --  Intsall built package
+    list       --  List install packages
+    owns       --  Determine which package owns a given file
+    remove     --  Remove installed package
+    revdepends --  List all installed packages that depend on current package
+    search     --  Search for package by regex
+    tree       --  List all depedencies of package (as opposed to immediate)
+EOF
+
+pkgmanager list-ext | while read -r pkg full_path; do
+    printf "    %-010s --  %s\n"    "${pkg#pkgmanager-}" "$(sed -n "2s/#\s*//p" "$full_path")"
+done
+
