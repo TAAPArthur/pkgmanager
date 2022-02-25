@@ -10,6 +10,8 @@ export PKGMAN_PATH="$WORKING_DIR"
 PATH=$PWD:$PATH
 
 create_factor_packages() {
+
+    $PKG_CMD new 0
     for i in $(seq 1 "${1:-12}"); do
         $PKG_CMD new "$i"
         for n in $(seq "$((i-1))" -1 1); do
@@ -21,6 +23,7 @@ create_factor_packages() {
         done
         rm -f blacklist
     done
+    echo 0 make >> 1/depends
 }
 run_test() {
     set -e

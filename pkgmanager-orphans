@@ -1,0 +1,9 @@
+#!/bin/sh -e
+# List all packages that no other depend on
+
+#label=$*
+pkgmanager list | while read -r pkg _ ; do
+    if [ -z "$(pkgmanager revdepends "$pkg" | head -n1)" ]; then
+        echo "$pkg"
+    fi
+done

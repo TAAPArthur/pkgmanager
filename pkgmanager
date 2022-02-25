@@ -285,7 +285,6 @@ pkg_owns() {
 pkg_build_helper() {
     pkg=$1
     path=$(pkg_find "$pkg")
-    [ -r "$path/build" ] || return
     [ -x "$path/build" ]
     (
         WORKING_DIR="$PKGMAN_TMPDIR/$pkg"
@@ -491,6 +490,12 @@ action_install() {
         pkg_install "$pkg"
     done
 }
+action_manifest () {
+    for pkg do
+        METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
+        cat "RELATIVE_METADATA_DIR/manifest"
+    done
+}
 
 pkg_determine_out_of_date() {
     debug HERE
@@ -510,7 +515,16 @@ action_fetch() {
 }
 
 pkg_revdepends() {
-    grep -lFxs -- "$1" "$PKGMAN_METADATA_DIR/"*/depends | grep -v "^__"
+    grep -lEs -- "^$1(\s|\$)" "$PKGMAN_METADATA_INSTALL_DIR/"*/depends | while read -r file; do
+        relative_path=${file#"$PKGMAN_METADATA_INSTALL_DIR/"}
+        pkg=${relative_path%"/depends"}
+        if [ "${pkg#"__"}" = "$pkg" ]; then
+            grep -E "^$1( |\$)" "$file" | {
+                read -r _ label
+                printf "%s\t%s\n" "$pkg" "$label"
+            }
+        fi
+    done
 }
 
 action_revdepends() {
@@ -521,7 +535,7 @@ action_revdepends() {
 
 action_remove() {
     for pkg do
-        if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -v "^__"; then
+        if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -q -v "make"; then
             die "$pkg has dependents"
         fi
         pkg_remove "$pkg"
@@ -603,8 +617,9 @@ case "$action" in
     f|fork) action_fork "$@";;
     o|owns) action_owns "$@";;
     outdated) action_outdated "$@";;
+    mani*) action_manifest  "$@";;
     r|remove) action_remove "$@";;
-    rev) action_remove "$@";;
+    rev*) action_revdepends "$@";;
     s|search) action_search "$@";;
     list-ext) action_ext;;
     *) action_ext "$action" "$@" ;;

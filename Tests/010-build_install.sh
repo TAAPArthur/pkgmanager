@@ -13,6 +13,7 @@ $PKG_CMD i A
 
 for file in a b c; do
     [ -e "$PKGMAN_ROOT/$file" ]
+    $PKG_CMD manifest A | grep "^/$file"
 done
 
 $PKG_CMD list A
