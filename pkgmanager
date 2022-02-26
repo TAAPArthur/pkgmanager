@@ -368,38 +368,35 @@ pkg_build() {
 pkg_install_helper() {
     pkg=$1
     archive=$2
-    # TODO consider flocking
-    (
-        WORKING_DIR="$(mktemp -d)"
-        trap 'rm -rf $WORKING_DIR' EXIT
-        METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
-        RELATIVE_METADATA_DIR=".$METADATA_DIR"
-        MANIEFST="$RELATIVE_METADATA_DIR/manifest"
-        cd "$WORKING_DIR"
-        tar -xf "$archive" "$MANIEFST"
+    WORKING_DIR="$(mktemp -d)"
+    trap 'rm -rf $WORKING_DIR' EXIT
+    METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
+    RELATIVE_METADATA_DIR=".$METADATA_DIR"
+    MANIEFST="$RELATIVE_METADATA_DIR/manifest"
+    cd "$WORKING_DIR"
+    tar -xf "$archive" "$MANIEFST"
 
-        run_hook pre-install "$pkg"
+    run_hook pre-install "$pkg"
 
-        TEMP_CONFLICTS=conficts
-        touch "$TEMP_CONFLICTS"
-        while read -r file; do
-            [ ! -d "$file" ] || continue
-            if [ -e "$file" ]; then
-                if pkg_owns "$file" >/dev/null && [ "$(pkg_owns "$file")" != "$pkg" ]; then
-                    echo "$pkg $file" > "$TEMP_CONFLICTS"
-                    continue
-                fi
+    TEMP_CONFLICTS=conficts
+    touch "$TEMP_CONFLICTS"
+    while read -r file; do
+        [ ! -d "$file" ] || continue
+        if [ -e "$file" ]; then
+            if pkg_owns "$file" >/dev/null && [ "$(pkg_owns "$file")" != "$pkg" ]; then
+                echo "$pkg $file" > "$TEMP_CONFLICTS"
+                continue
             fi
-            tar -xf "$archive" -C "$PKGMAN_ROOT" ".$file"
-        done < "$MANIEFST"
-        cut -d" " -f2 <"$TEMP_CONFLICTS" | grep -v -Ff- "$MANIEFST" > "$PKGMAN_ROOT/$MANIEFST"
-        debug "Updating conflicts"
-        touch "$PKGMAN_METADATA_CONFLICTS_FILE"
-        grep -v "$pkg " "$PKGMAN_METADATA_CONFLICTS_FILE" | sort -u - "$TEMP_CONFLICTS" > temp
-        mv temp "$PKGMAN_METADATA_CONFLICTS_FILE"
+        fi
+        tar -xf "$archive" -C "$PKGMAN_ROOT" ".$file"
+    done < "$MANIEFST"
+    cut -d" " -f2 <"$TEMP_CONFLICTS" | grep -v -Ff- "$MANIEFST" > "$PKGMAN_ROOT/$MANIEFST"
+    debug "Updating conflicts"
+    touch "$PKGMAN_METADATA_CONFLICTS_FILE"
+    grep -v "$pkg " "$PKGMAN_METADATA_CONFLICTS_FILE" | sort -u - "$TEMP_CONFLICTS" > temp
+    mv temp "$PKGMAN_METADATA_CONFLICTS_FILE"
 
-        run_hook post-install "$pkg"
-    )
+    run_hook post-install "$pkg"
 }
 
 pkg_install() {
@@ -409,7 +406,6 @@ pkg_install() {
     archive="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     info "installing $pkg"
 
-
     # ensure non-make dependencies are built
     pkg_build_depedencies "$pkg" make
     if ! pkg_is_built "$pkg" >/dev/null; then
@@ -417,7 +413,9 @@ pkg_install() {
     fi
 
     archive="$(pkg_get_built "$pkg" "$version")"
-    pkg_install_helper "$pkg" "$archive"
+    mkdir -p "$PKGMAN_METADATA_INSTALL_DIR"
+    touch "$PKGMAN_METADATA_CONFLICTS_FILE"
+    flock "$PKGMAN_METADATA_CONFLICTS_FILE" "$0" _pkg_install_helper "$pkg" "$archive"
 
     info "installed $pkg"
 }
@@ -640,6 +638,7 @@ action=$1
 shift
 case "$action" in
     _pkg_build_helper) pkg_build_helper "$@";;
+    _pkg_install_helper) pkg_install_helper "$@";;
     b|build) action_build "$@";;
     do*) action_download "$@";;
     export)    action_export "$@";;
