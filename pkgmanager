@@ -530,7 +530,6 @@ action_manifest () {
 }
 
 pkg_determine_out_of_date() {
-    debug HERE
     pkg_list_installed | while read -r pkg v r; do
         debug "$v $r" != "$(pkg_read_full_version "$pkg")"
         if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
