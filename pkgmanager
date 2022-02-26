@@ -60,14 +60,6 @@ download_sources() {
     dest=$PKGMAN_SOURCE_CACHE_DIR/$pkg
     mkdir -p "$dest"
     while read -r url dir; do
-        if [ "${url#git+}" != "$url" ] ; then
-            if [ -n "$GIT_CLONE_DEST" ]; then
-                debug "cloneing $url"
-                # shellcheck disable=2086
-                ( cd "$GIT_CLONE_DEST" && git clone "${url#git+}" $dir )
-            fi
-            continue
-        fi
 
         filename="$(basename "$url")"
         if [ -n "$dir" ]; then
@@ -260,7 +252,7 @@ pkg_download() {
     pkg=$1
     path=$2
     version=$3
-    pkg_read_sources "$path" "$version" | grep -v "^git+" | download_sources "$pkg"
+    pkg_read_sources "$path" "$version" | grep "^\w*://" | download_sources "$pkg"
 }
 
 pkg_extract_sources() {
@@ -270,13 +262,19 @@ pkg_extract_sources() {
     path=$3
     [ -n "$path" ] || path="$(pkg_find "$pkg")"
     version=$(pkg_read_version "$path")
-    GIT_CLONE_DEST="$3"
     pkg_download "$pkg" "$path" "$version" >/dev/null
     pkg_download "$pkg" "$path" "$version" | while read -r fullpath dirname; do
         mkdir -p "$dest/$dirname"
         extract "$fullpath" "$dest/$dirname"
     done
-    unset GIT_CLONE_DEST
+
+    pkg_read_sources "$path" "$version" | grep -v "^\w*://" | while read -r rpath dirname; do
+        if [ "git+${rpath#git+}" = "$rpath" ]; then
+            git clone "${url#git+}" "$dest/$dirname"
+        else
+            cp "$path/$rpath"  "$dest/$dirname"
+        fi
+    done
 }
 
 
