@@ -427,9 +427,8 @@ pkg_remove() {
 
     info "Removing $pkg"
     while read -r file; do
-        echo "FILE $file"
         if [ -d "$PKGMAN_ROOT/$file" ]; then
-            rmdir "$PKGMAN_ROOT/$file" || true
+            rmdir "$PKGMAN_ROOT/$file" 2>/dev/null || true
         else
             rm -f "$PKGMAN_ROOT/$file"
         fi
