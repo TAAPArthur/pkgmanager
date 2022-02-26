@@ -24,6 +24,7 @@ create_factor_packages() {
         rm -f blacklist
     done
     echo 0 make >> 1/depends
+    echo "$PKG_CMD list | grep 0" >> 1/build
 }
 run_test() {
     set -e

@@ -6,6 +6,8 @@ echo 'cd $1; touch a b c' >> A/build
 $PKG_CMD b A
 $PKG_CMD i A
 
+
+[ 0"$($PKG_CMD revdepends A)" -eq 0 ]
 $PKG_CMD r A
 
 for file in a b c; do
