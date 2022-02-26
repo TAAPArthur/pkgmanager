@@ -21,6 +21,8 @@ PKGMAN_AUTO_INSTALL=${PKGMAN_AUTO_INSTALL:-0}
 PKGMAN_FORCE=${PKGMAN_FORCE:-0}
 PKGMAN_TMPDIR="${PKGMAN_TMPDIR:-/tmp/$PKGMAN_NAME}/$$"
 
+PKGMAN_MAX_NESTED_DEPENDS="${PKGMAN_MAX_NESTED_DEPENDS:-64}"
+
 PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/pkgman/}"
 
 ############## General helpers
@@ -204,7 +206,7 @@ _pkg_find_nested_deps() {
 
 pkg_find_nested_deps() {
     SED_PATTERN=${2:+"/\s$2\$/d"}
-    max_level=${3:-256}
+    max_level=${3:-"$PKGMAN_MAX_NESTED_DEPENDS"}
     level=${4:-0}
     _pkg_find_nested_deps "$1" "$max_level" "$level" | sed "$SED_PATTERN"
 }
@@ -336,11 +338,13 @@ pkg_build_single() {
 pkg_build_depedencies() {
     pkg=$1
     filterStr=$2
+    level=${3:-0}
     pkg_find_deps "$pkg" "$filterStr" |
     while read -r dep_pkg _; do
         if ! pkg_is_installed "$dep_pkg"; then
             if ! pkg_is_built "$dep_pkg" >/dev/null; then
-                pkg_build_depedencies "$dep_pkg"
+                [ "$level" -ne "$PKGMAN_MAX_NESTED_DEPENDS" ] || die "Too many nested dependencies"
+                pkg_build_depedencies "$dep_pkg" "" "$((level+1))"
                 pkg_build_single "$dep_pkg"
             fi
             pkg_install "$dep_pkg"
