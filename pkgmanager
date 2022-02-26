@@ -265,7 +265,15 @@ pkg_extract_sources() {
     pkg_download "$pkg" "$path" "$version" >/dev/null
     pkg_download "$pkg" "$path" "$version" | while read -r fullpath dirname; do
         mkdir -p "$dest/$dirname"
-        extract "$fullpath" "$dest/$dirname"
+        tmp="$path/.tmp"
+        mkdir -p "$tmp"
+        extract "$fullpath" "$tmp"
+        # shellcheck disable=2144
+        if [ -d "$tmp"/* ]; then
+            mv "$tmp"/*/* "$dest/$dirname"
+        else
+            mv "$tmp" "$dest/$dirname"
+        fi
     done
 
     pkg_read_sources "$path" "$version" | grep -v "^\w*://" | while read -r rpath dirname; do
