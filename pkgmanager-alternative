@@ -1,0 +1,15 @@
+#!/bin/sh -e
+
+METADATA=$(pkgmanager get-metadata-install-dir)
+if [ $# -eq 0 ]; then
+    pkgmanager list | while read -r pkg _ ; do
+        CONFLICT_DIR="$METADATA/$pkg/conflicts"
+        if [ -d "$CONFLICT_DIR"  ]; then
+            find "$CONFLICT_DIR" -type f -exec printf "%s\t%s\n" "$pkg" {} \; | sed "s:\t$CONFLICT_DIR:\t:"
+        fi
+    done
+else
+    while read -r pkg path; do
+        pkgmanager swap-conflict "$pkg" "$path"
+    done
+fi

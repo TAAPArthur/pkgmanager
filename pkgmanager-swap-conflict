@@ -1,0 +1,31 @@
+#!/bin/sh -e
+
+# PKG path
+remove_existing_file() {
+    path=$1
+    if [ -e "$PKGMAN_ROOT/$path" ]; then
+        owner=$(pkgmanager owns "$path") || return 0
+        METADATA=$(pkgmanager get-metadata-install-dir "$owner")
+        DIR="$METADATA/conflicts"
+        CONFLICT_PATH="$DIR/$path"
+
+        mkdir -p "$(dirname "$CONFLICT_PATH")"
+        mv "$PKGMAN_ROOT/$path" "$CONFLICT_PATH"
+
+        echo "${CONFLICT_PATH#"$PKGMAN_ROOT"}" | pkgmanager update-manifest "$METADATA/manifest" - "$path"
+    fi
+}
+
+restore_conflict() {
+    pkg=$1
+    if [ -n "$pkg" ]; then
+        METADATA=$(pkgmanager get-metadata-install-dir "$pkg")
+        DIR="$METADATA/conflicts"
+        CONFLICT_PATH="$DIR/$path"
+        mv "$CONFLICT_PATH" "$PKGMAN_ROOT/$path"
+        echo "$path" | pkgmanager update-manifest "$METADATA/manifest" - "${CONFLICT_PATH#"$PKGMAN_ROOT"}"
+    fi
+}
+
+remove_existing_file "$2"
+restore_conflict "$1"
