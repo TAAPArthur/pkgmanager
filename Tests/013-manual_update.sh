@@ -17,3 +17,13 @@ $PKG_CMD i A
 $PKG_CMD list A | grep "1 2"
 
 
+echo "2 1" > A/version
+
+echo 'touch "$1/aa"'  > A/build
+
+$PKG_CMD b A
+$PKG_CMD i A
+$PKG_CMD list A | grep "2 1"
+
+[ -e "$PKGMAN_ROOT/aa" ]
+[ ! -e "$PKGMAN_ROOT/a" ]

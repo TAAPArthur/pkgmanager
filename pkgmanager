@@ -288,6 +288,10 @@ pkg_extract_sources() {
     done
 }
 
+pkg_gen_manifest() {
+    find "$1" -depth | sed -e "s:$1::" -e '/^$/d' | sort -r
+}
+
 pkg_build_helper() {
     pkg=$1
     path=$(pkg_find "$pkg")
@@ -313,7 +317,7 @@ pkg_build_helper() {
     run_hook post-build "$pkg"
 
     # todo hooks
-    find "$DEST_DIR" -depth | sed -e "s:$DEST_DIR::" -e '/^$/d' > "$METADATA_DIR/manifest"
+    pkg_gen_manifest "$DEST_DIR" > "$METADATA_DIR/manifest"
     version="$(pkg_read_full_version "$path")"
     tar -c -C "$DEST_DIR" . > "$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
 }
@@ -361,34 +365,31 @@ pkg_install_helper() {
     pkg=$1
     archive=$2
     WORKING_DIR="$(mktemp -d)"
+    EXTRACTION_DIR="$WORKING_DIR/_fakeroot"
     trap 'rm -rf $WORKING_DIR' EXIT
+    mkdir -p "$EXTRACTION_DIR"
+
     METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     RELATIVE_METADATA_DIR=".$METADATA_DIR"
-    MANIEFST="$RELATIVE_METADATA_DIR/manifest"
-    cd "$WORKING_DIR"
-    tar -xf "$archive" "$MANIEFST"
+    MANIEFST="$EXTRACTION_DIR/$RELATIVE_METADATA_DIR/manifest"
 
-    run_hook pre-install "$pkg"
+    extract "$archive" "$EXTRACTION_DIR"
 
-    TEMP_CONFLICTS=conficts
-    touch "$TEMP_CONFLICTS"
-    while read -r file; do
-        [ ! -d "$file" ] || continue
-        if [ -e "$file" ]; then
-            if pkg_owns "$file" >/dev/null && [ "$(pkg_owns "$file")" != "$pkg" ]; then
-                echo "$pkg $file" > "$TEMP_CONFLICTS"
-                continue
-            fi
-        fi
-        tar -xf "$archive" -C "$PKGMAN_ROOT" ".$file"
-    done < "$MANIEFST"
-    cut -d" " -f2 <"$TEMP_CONFLICTS" | grep -v -Ff- "$MANIEFST" > "$PKGMAN_ROOT/$MANIEFST"
-    debug "Updating conflicts"
-    touch "$PKGMAN_METADATA_CONFLICTS_FILE"
-    grep -v "$pkg " "$PKGMAN_METADATA_CONFLICTS_FILE" | sort -u - "$TEMP_CONFLICTS" > temp
-    mv temp "$PKGMAN_METADATA_CONFLICTS_FILE"
+    PREVIOUS_MANIFEST=$WORKING_DIR/current_manifest
+    cp "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" "$PREVIOUS_MANIFEST" 2>/dev/null || true
 
-    run_hook post-install "$pkg"
+    cd "$EXTRACTION_DIR"
+    run_hook pre-install "$pkg" "$PREVIOUS_MANIFEST"
+
+    cp -R "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
+
+    if [ -r "$PREVIOUS_MANIFEST" ]; then
+        pkg_gen_manifest "$EXTRACTION_DIR" | comm -13 - "$PREVIOUS_MANIFEST" | while read -r path; do
+            rm "$PKGMAN_ROOT/$path"
+        done
+    fi
+
+    run_hook post-install "$pkg" "$PREVIOUS_MANIFEST"
 }
 
 pkg_install() {
