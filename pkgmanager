@@ -38,7 +38,7 @@ info() {
 }
 
 debug() {
-    echo "DEBUG: $*" >&2
+    [ -z "$PKGMAN_DDBEUG" ] || echo "DEBUG: $*" >&2
 }
 
 decompress() {
