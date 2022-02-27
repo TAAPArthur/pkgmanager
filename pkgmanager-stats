@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+METADATA=$(pkgmanager get-metadata-install-dir)
+
+stat_type=$1
+shift
+if [ "$#" -eq 0 ]; then
+    # shellcheck disable=2046
+    set -- $(pkgmanager list)
+fi
+for pkg ; do
+    read -r label < "$METADATA/$pkg/stats/$stat_type"
+    printf "%s\t%s\n" "$label" "$pkg"
+done
