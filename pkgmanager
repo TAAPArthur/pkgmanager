@@ -265,7 +265,15 @@ pkg_extract_sources() {
     path=$3
     [ -n "$path" ] || path="$(pkg_find "$pkg")"
     version=$(pkg_read_version "$path")
+
+    # Download sources first to verify we can download them
     pkg_download "$pkg" "$path" "$version" >/dev/null
+
+    # Handle git repo next since we can't clone into a non-empty dir
+    pkg_read_sources "$path" "$version" | grep "^git+" | while read -r rpath dirname; do
+        git clone "${rpath#git+}" "$dest/$dirname"
+    done
+
     pkg_download "$pkg" "$path" "$version" | while read -r fullpath dirname; do
         mkdir -p "$dest/$dirname"
         tmp="$path/.tmp"
@@ -274,14 +282,16 @@ pkg_extract_sources() {
         # shellcheck disable=2144
         if [ -d "$tmp"/* ]; then
             mv "$tmp"/*/* "$dest/$dirname"
+            rmdir "$path/.tmp"/*
         else
             mv "$tmp" "$dest/$dirname"
         fi
     done
 
-    pkg_read_sources "$path" "$version" | grep -v "^\w*://" | while read -r rpath dirname; do
+    # Handle local files last so they can override any of the above in case of conflicts
+    pkg_read_sources "$path" "$version" | grep -v -e "^\w*://" -e "^git+"| while read -r rpath dirname; do
         if [ "git+${rpath#git+}" = "$rpath" ]; then
-            git clone "${url#git+}" "$dest/$dirname"
+            git clone "${rpath#git+}" "$dest/$dirname"
         else
             cp "$path/$rpath"  "$dest/$dirname"
         fi
