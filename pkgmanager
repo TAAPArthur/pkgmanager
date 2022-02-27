@@ -10,7 +10,7 @@ PKGMAN_CACHE_DIR=${PKGMAN_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/$PKGMAN_NAM
 PKGMAN_BUILD_CACHE_DIR=$PKGMAN_CACHE_DIR/build
 PKGMAN_SOURCE_CACHE_DIR=${PKGMAN_SOURCE_CACHE_DIR:-$PKGMAN_CACHE_DIR/sources}
 
-PKGMAN_METADATA_BASE_DIR=${PKGMAN_METADATA_DIR:-/var/db/$PKGMAN_NAME}
+PKGMAN_METADATA_BASE_DIR=${PKGMAN_METADATA_DIR:-var/db/$PKGMAN_NAME}
 PKGMAN_METADATA_BASE_INSTALL_DIR="$PKGMAN_METADATA_BASE_DIR/install"
 
 PKGMAN_METADATA_DIR=$PKGMAN_METADATA_ROOT/$PKGMAN_METADATA_BASE_DIR
@@ -117,9 +117,9 @@ run_hook(){
     export TYPE="$1"
     export PKG="$2"
     debug "Running hook '$TYPE'"
-    for_each_in_path "$PKGMAN_HOOK_PATH" | while read -r path; do
-        for script in "$path/"*.sh; do
-            if [ -x "$script" ]; then
+    for hook in $(for_each_in_path "$PKGMAN_HOOK_PATH") ; do
+        for script in "$hook/"*.sh; do
+            if [ -r "$script" ]; then
                 . "$script"
             fi
         done
