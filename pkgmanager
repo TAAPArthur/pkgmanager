@@ -310,6 +310,22 @@ pkg_gen_manifest() {
     find "$1" | sed -e "s:$1::" -e '/^$/d' | sort
 }
 
+pkg_ext() {
+    name=$1
+    for_each_in_path "$PATH" | while read -r path; do
+        if [ -x "$path/$name" ]; then
+            printf "%s\t%s\n" "$name" "$path/$name"
+            return
+        else
+            for executable in "$path/$name"*; do
+                if [ -x "$executable" ]; then
+                    printf "%s\t%s\n" "${executable#"$path/"}" "$executable"
+                fi
+            done
+        fi
+    done
+}
+
 pkg_build_helper() {
     pkg=$1
     path=$(pkg_find "$pkg")
@@ -317,8 +333,8 @@ pkg_build_helper() {
     WORKING_DIR="$PKGMAN_TMPDIR/$pkg"
     mkdir -p  "$WORKING_DIR"
     trap 'rm -rf $WORKING_DIR' EXIT
-    DEST_DIR="$WORKING_DIR/dest"
-    BUILD_DIR="$WORKING_DIR/build"
+    DEST_DIR="$WORKING_DIR/dest_dir"
+    BUILD_DIR="$WORKING_DIR/build_dir"
     mkdir -p "$BUILD_DIR" "$DEST_DIR"
     pkg_extract_sources "$pkg" "$BUILD_DIR" "$path"
     cd "$BUILD_DIR"
@@ -470,6 +486,27 @@ pkg_list_installed() {
     done
 }
 
+pkg_determine_out_of_date() {
+    pkg_list_installed | while read -r pkg v r; do
+        if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
+            echo "$pkg"
+        fi
+    done
+}
+
+pkg_revdepends() {
+    grep -lEs -- "^$1(\s|\$)" "$PKGMAN_METADATA_INSTALL_DIR/"*/depends | while read -r file; do
+        relative_path=${file#"$PKGMAN_METADATA_INSTALL_DIR/"}
+        pkg=${relative_path%"/depends"}
+        if [ "${pkg#"__"}" = "$pkg" ]; then
+            grep -E "^$1( |\$)" "$file" | {
+                read -r _ label
+                printf "%s\t%s\n" "$pkg" "$label"
+            }
+        fi
+    done
+}
+
 ############ External commands
 
 action_fork() {
@@ -486,6 +523,7 @@ action_find() {
         pkg_find "$pkg"
     done
 }
+
 action_search() {
     for pattern do
         pkg_search "$pattern"
@@ -506,7 +544,6 @@ action_extract_sources() {
         pkg_extract_sources "$pkg" "${PKG_DESTDIR:-"$PWD/$pkg"}"
     done
 }
-
 
 _get_build_order() {
     # shellcheck disable=2030
@@ -557,39 +594,13 @@ action_install() {
         pkg_install "$pkg"
     done
 }
-action_manifest () {
-    for pkg do
-        METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
-        cat "RELATIVE_METADATA_DIR/manifest"
-    done
-}
-
-pkg_determine_out_of_date() {
-    pkg_list_installed | while read -r pkg v r; do
-        if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
-            echo "$pkg"
-        fi
-    done
-}
 
 action_outdated() {
     pkg_determine_out_of_date | _get_build_order
 }
+
 action_fetch() {
     pkg_fetch
-}
-
-pkg_revdepends() {
-    grep -lEs -- "^$1(\s|\$)" "$PKGMAN_METADATA_INSTALL_DIR/"*/depends | while read -r file; do
-        relative_path=${file#"$PKGMAN_METADATA_INSTALL_DIR/"}
-        pkg=${relative_path%"/depends"}
-        if [ "${pkg#"__"}" = "$pkg" ]; then
-            grep -E "^$1( |\$)" "$file" | {
-                read -r _ label
-                printf "%s\t%s\n" "$pkg" "$label"
-            }
-        fi
-    done
 }
 
 action_revdepends() {
@@ -625,28 +636,6 @@ action_list() {
     fi
 }
 
-action_manifest() {
-    for pkg do
-        cat "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
-    done
-}
-
-pkg_ext() {
-    name=$1
-    for_each_in_path "$PATH" | while read -r path; do
-        if [ -x "$path/$name" ]; then
-            printf "%s\t%s\n" "$name" "$path/$name"
-            return
-        else
-            for executable in "$path/$name"*; do
-                if [ -x "$executable" ]; then
-                    printf "%s\t%s\n" "${executable#"$path/"}" "$executable"
-                fi
-            done
-        fi
-    done
-}
-
 action_ext() {
     if [ $# -eq 0 ]; then
         pkg_ext pkgmanager- | sort -u -k1
@@ -663,26 +652,25 @@ action_ext() {
 action=$1
 shift
 case "$action" in
-    _pkg_build_helper) pkg_build_helper "$@";;
-    _pkg_install_helper) pkg_install_helper "$@";;
-    _pkg_remove_helper) pkg_remove_helper "$@";;
-    b|build) action_build "$@";;
-    do*) action_download "$@";;
-    export)    action_export "$@";;
-    e|extract) action_extract_sources "$@";;
-    d|depends) action_depends "$@";;
-    t|tree) action_tree "$@";;
-    find) action_find "$@";;
-    fetch) action_fetch "$@";;
-    i|install) action_install "$@";;
-    l|list) action_list "$@";;
-    f|fork) action_fork "$@";;
-    outdated) action_outdated "$@";;
-    mani*) action_manifest  "$@";;
-    r|remove) action_remove "$@";;
-    rev*) action_revdepends "$@";;
-    s|search) action_search "$@";;
-    list-ext) action_ext;;
+    _pkg_build_helper)        pkg_build_helper "$@";;
+    _pkg_install_helper)      pkg_install_helper "$@";;
+    _pkg_remove_helper)       pkg_remove_helper "$@";;
+    b|build)                  action_build "$@";;
+    do*)                      action_download "$@";;
+    d|depends)                action_depends "$@";;
+    export)                   action_export "$@";;
+    e|extract)                action_extract_sources "$@";;
+    fetch)                    action_fetch "$@";;
+    find)                     action_find "$@";;
+    f|fork)                   action_fork "$@";;
     get-metadata-install-dir) echo "$PKGMAN_METADATA_INSTALL_DIR/$1";;
-    *) action_ext "$action" "$@" ;;
+    i|install)                action_install "$@";;
+    list-ext)                 action_ext;;
+    l|list)                   action_list "$@";;
+    outdated)                 action_outdated "$@";;
+    rev*)                     action_revdepends "$@";;
+    r|remove)                 action_remove "$@";;
+    s|search)                 action_search "$@";;
+    t|tree)                   action_tree "$@";;
+    *)                        action_ext "$action" "$@" ;;
 esac

@@ -1,0 +1,7 @@
+#!/bin/sh -e
+# Prints the list of installed packages
+
+MANIFEST="$(pkgmanager get-metadata-install-dir)"
+for pkg do
+    cat "$MANIFEST/$pkg/manifest"
+done
