@@ -12,7 +12,6 @@ cat <<EOF
     fork       --  Copy the package info into current directory
     install    --  Intsall built package
     list       --  List install packages
-    owns       --  Determine which package owns a given file
     remove     --  Remove installed package
     revdepends --  List all installed packages that depend on current package
     search     --  Search for package by regex

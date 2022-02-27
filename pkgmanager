@@ -288,14 +288,6 @@ pkg_extract_sources() {
     done
 }
 
-
-pkg_owns() {
-    filepath=$1
-    manifest=$(grep "$filepath" "$PKGMAN_METADATA_INSTALL_DIR/"*/manifest | head -n1)
-    basename "$(dirname "$manifest")"
-}
-
-
 pkg_build_helper() {
     pkg=$1
     path=$(pkg_find "$pkg")
@@ -573,12 +565,6 @@ action_remove() {
     done
 }
 
-action_owns() {
-    for path do
-        printf "%s\t%s" "$(pkg_owns "$path")" "$path"
-    done
-}
-
 action_list() {
     if [ $# -eq 0 ]; then
         pkg_list_installed
@@ -648,12 +634,12 @@ case "$action" in
     i|install) action_install "$@";;
     l|list) action_list "$@";;
     f|fork) action_fork "$@";;
-    o|owns) action_owns "$@";;
     outdated) action_outdated "$@";;
     mani*) action_manifest  "$@";;
     r|remove) action_remove "$@";;
     rev*) action_revdepends "$@";;
     s|search) action_search "$@";;
     list-ext) action_ext;;
+    get-metadata-install-dir) echo "$PKGMAN_METADATA_INSTALL_DIR/$1";;
     *) action_ext "$action" "$@" ;;
 esac

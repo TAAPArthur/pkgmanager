@@ -1,0 +1,13 @@
+#!/bin/sh -e
+# Determine which package owns a given file
+
+METADATA=$(pkgmanager get-metadata-install-dir)
+pkg_owns() {
+    filepath=$1
+    manifest=$(grep -sl "$filepath" "$METADATA/"*/manifest | head -n1)
+    [ -n "$manifest" ] && basename "$(dirname "$manifest")"
+}
+
+for path do
+    pkg_owns "$path"
+done
