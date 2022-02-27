@@ -636,17 +636,23 @@ action_list() {
     fi
 }
 
-action_ext() {
+action_list_ext() {
     if [ $# -eq 0 ]; then
         pkg_ext pkgmanager- | sort -u -k1
     else
-        name="pkgmanager-$1"
-        shift
-        path=$(pkg_ext "$name" | head -n1 | cut -f1)
-        [ -n "$path" ]
-        debug "Using $path"
-        exec $path "$@"
+        for name;do
+            pkg_ext "pkgmanager-$name" | sort -u -k1
+        done
     fi
+}
+
+action_ext() {
+    name="pkgmanager-$1"
+    shift
+    path=$(pkg_ext "$name" | head -n1 | cut -f1)
+    [ -n "$path" ]
+    debug "Using $path"
+    exec $path "$@"
 }
 
 action=$1
@@ -665,7 +671,7 @@ case "$action" in
     f|fork)                   action_fork "$@";;
     get-metadata-install-dir) echo "$PKGMAN_METADATA_INSTALL_DIR/$1";;
     i|install)                action_install "$@";;
-    list-ext)                 action_ext;;
+    list-ext)                 action_list_ext "$@" ;;
     l|list)                   action_list "$@";;
     outdated)                 action_outdated "$@";;
     rev*)                     action_revdepends "$@";;

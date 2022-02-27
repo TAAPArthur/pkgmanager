@@ -1,4 +1,7 @@
 #!/bin/sh -e
+# Used list swap conflicting files for installed packages
+# With no args, it prints pkg conflict_path (tab-separated)
+# Else it reads stdin and calls swap-conflict
 
 METADATA=$(pkgmanager get-metadata-install-dir)
 if [ $# -eq 0 ]; then

@@ -1,4 +1,6 @@
 #!/bin/sh -e
+# Helper to atomically update a manifest file
+# manifest_file file_to_append [entry_to_remove]
 
 [ -e "$1" ]
 [ -n "$_PKGMAN_HAS_METADATA_LOCK" ] || _PKGMAN_HAS_METADATA_LOCK=1 exec flock -n -s "$(pkgmanager get-metadata-install-dir)/.lock" "$0" "$@"

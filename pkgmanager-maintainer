@@ -1,4 +1,6 @@
 #!/bin/sh -e
+# Shows the active maintainer for a package
+# The maintainer is the last person to modify version
 
 for pkg ; do
     path=$(pkgmanager find "$pkg" | cut -f1)

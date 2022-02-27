@@ -1,6 +1,7 @@
 #!/bin/sh -e
+# Swaps Replace path with pkg's implementation
+# [pkg] path
 
-# PKG path
 remove_existing_file() {
     path=$1
     if [ -e "$PKGMAN_ROOT/$path" ]; then

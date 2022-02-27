@@ -1,4 +1,6 @@
 #!/bin/sh -e
+# Fetches any updates from repositories and builds/installs updates
+# Takes no arguments
 
 pkgmanager fetch
 # shellcheck disable=2046

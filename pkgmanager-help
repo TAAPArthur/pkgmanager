@@ -1,24 +1,65 @@
 #!/bin/sh -e
 # Shows help info
+# If given no arguments, show short help for everything
+# Else shows long help for all stated packages
 
-cat <<EOF
-    build      --  build package
-    depends    --  List immediate depedencies of package
-    download   --  download remote sourcs
-    export     --  Copy built tar ball to current directory
-    extract    --  Extract sources into current directory
-    fetch      --  update repo
-    find       --  search for a package by literal name
-    fork       --  Copy the package info into current directory
-    install    --  Intsall built package
-    list       --  List install packages
-    remove     --  Remove installed package
-    revdepends --  List all installed packages that depend on current package
-    search     --  Search for package by regex
-    tree       --  List all depedencies of package (as opposed to immediate)
+long_help() {
+    case "$1" in
+        list-ext |outdated)
+            echo"Takes no arguments"
+            return
+            ;;
+    esac
+    printf "[pkg_list]\n"
+    case "$1" in
+        fork ) return;
+    esac
+    echo "If not specified the basename of the current directory will be used"
+    echo "Also accepts paths instead of packages"
+    case "$1" in
+        build     ) echo "Packages will be build in a way that dependant packages are built first";;
+        depends   ) echo "If the package is not installed, it will report stated dependencies";;
+        download  ) echo "Downloaded remote sources";;
+    esac
+}
+
+short_help() {
+    cat <<EOF
+    build            --  build package
+    depends          --  List immediate depedencies of package
+    download         --  download remote sourcs
+    export           --  Copy built tar ball to current directory
+    extract          --  Extract sources into current directory
+    fetch            --  update repo
+    find             --  search for a package by literal name
+    fork             --  Copy the package info into current directory
+    install          --  Intsall built package
+    list             --  List install packages
+    list-ext         --  List all extensions
+    outdated         --  List all packages that can be updated and the order in which they should be built
+    remove           --  Remove installed package
+    revdepends       --  List all installed packages that depend on current package
+    search           --  Search for package by regex
+    tree             --  List all depedencies of package (as opposed to immediate)
 EOF
+    pkgmanager list-ext | while read -r pkg full_path; do
+        printf "    %-016s --  %s\n"    "${pkg#pkgmanager-}" "$(sed -n "2s/^#\s*//p" "$full_path")"
+    done
+}
 
-pkgmanager list-ext | while read -r pkg full_path; do
-    printf "    %-010s --  %s\n"    "${pkg#pkgmanager-}" "$(sed -n "2s/#\s*//p" "$full_path")"
-done
-
+if [ $# -eq 0 ]; then
+    short_help
+else
+    for pkg; do
+        pkg=${pkg#pkgmanager-}
+        printf "%s - %s\n" "$pkg" "$(short_help | sed -n "s/\s* $pkg .*--  //p")"
+        echo "-----"
+        full_path=$(pkgmanager list-ext "$pkg" | head -n1 | cut -f2)
+        if [ -n "$full_path" ]; then
+            sed -n "2,7s/^#\s*//p" "$full_path"
+        else
+            long_help "$pkg"
+        fi
+        echo "-----"
+    done
+fi

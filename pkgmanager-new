@@ -1,4 +1,6 @@
 #!/bin/sh -e
+# Creates a new skeleton package
+# name [version [sources]]
 
 name=$1
 version=${2:-1}

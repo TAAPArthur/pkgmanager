@@ -1,4 +1,7 @@
 #!/bin/sh -e
+# List install/build stats for a package
+# stat_type list_of_packages
+# The stats hook is needed for this to work
 
 METADATA=$(pkgmanager get-metadata-install-dir)
 
