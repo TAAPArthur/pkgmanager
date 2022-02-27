@@ -14,9 +14,7 @@ case "$TYPE" in
         done
         ;;
     post-install)
-        echo $PWD
         if [ -e "$WORKING_DIR/post_manifest" ]; then
-            sort "$WORKING_DIR/post_manifest" manifest > "$WORKING_DIR/temp"
-            mv "$WORKING_DIR/temp" manifest
+            pkgmanager update-manifest manifest "$WORKING_DIR/post_manifest"
         fi
 esac
