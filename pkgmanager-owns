@@ -4,7 +4,7 @@
 METADATA=$(pkgmanager get-metadata-install-dir)
 pkg_owns() {
     filepath=$1
-    manifest=$(grep -sl "$filepath" "$METADATA/"*/manifest | head -n1)
+    manifest=$(grep -slFx "$filepath" "$METADATA/"*/manifest | head -n1)
     [ -n "$manifest" ] && basename "$(dirname "$manifest")"
 }
 
