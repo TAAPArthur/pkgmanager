@@ -434,12 +434,10 @@ pkg_install() {
     info "installed $pkg"
 }
 
-pkg_remove() {
+pkg_remove_helper() {
     pkg=$1
     MANIEFST="$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
-    [ -e "$MANIEFST" ] || die "Package not installed"
-
-    info "Removing $pkg"
+    run_hook pre-remove "$pkg"
     sort -r "$MANIEFST" | while read -r file; do
         if [ -d "$PKGMAN_ROOT/$file" ]; then
             rmdir "$PKGMAN_ROOT/$file" 2>/dev/null || true
@@ -447,6 +445,15 @@ pkg_remove() {
             rm -f "$PKGMAN_ROOT/$file"
         fi
     done
+    run_hook post-remove "$pkg"
+}
+
+pkg_remove() {
+    pkg=$1
+    [ -d "$PKGMAN_METADATA_INSTALL_DIR/$pkg" ] || die "Package not installed"
+
+    info "Removing $pkg"
+    _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_remove_helper "$pkg"
 
     info "Removed $pkg"
 
@@ -658,6 +665,7 @@ shift
 case "$action" in
     _pkg_build_helper) pkg_build_helper "$@";;
     _pkg_install_helper) pkg_install_helper "$@";;
+    _pkg_remove_helper) pkg_remove_helper "$@";;
     b|build) action_build "$@";;
     do*) action_download "$@";;
     export)    action_export "$@";;
