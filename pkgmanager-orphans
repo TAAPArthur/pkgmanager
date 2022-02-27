@@ -1,9 +1,20 @@
 #!/bin/sh -e
-# List all packages that no other depend on
+# List all packages that no others depend on
+# [label]
+# If label is specified then matching dependency links are ignored
+# For example if `make` then a package is an orphan if others depend on it just
+# for building
 
-#label=$*
+label=$1
+filter() {
+    if [ -z "$label" ]; then
+        cat -
+    else
+        grep -v "\t$label\$"
+    fi
+}
 pkgmanager list | while read -r pkg _ ; do
-    if [ -z "$(pkgmanager revdepends "$pkg" | head -n1)" ]; then
+    if [ -z "$(pkgmanager revdepends "$pkg" | filter | head -n1)" ]; then
         echo "$pkg"
     fi
 done
