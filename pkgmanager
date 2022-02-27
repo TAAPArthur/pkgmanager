@@ -114,6 +114,9 @@ for_each_in_path() {
 
 # hooks
 run_hook(){
+    export TYPE="$1"
+    export PKG="$2"
+    debug "Running hook '$TYPE'"
     for_each_in_path "$PKGMAN_HOOK_PATH" | while read -r path; do
         for script in "$path/"*.sh; do
             if [ -x "$script" ]; then
@@ -304,7 +307,7 @@ pkg_extract_sources() {
 }
 
 pkg_gen_manifest() {
-    find "$1" -depth | sed -e "s:$1::" -e '/^$/d' | sort -r
+    find "$1" | sed -e "s:$1::" -e '/^$/d' | sort
 }
 
 pkg_build_helper() {
@@ -398,14 +401,17 @@ pkg_install_helper() {
     run_hook pre-install "$pkg" "$PREVIOUS_MANIFEST"
 
     cp -R "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
+    # Update manifest because hooks may have changed it
+    pkg_gen_manifest "$EXTRACTION_DIR" > "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
 
     if [ -r "$PREVIOUS_MANIFEST" ]; then
-        pkg_gen_manifest "$EXTRACTION_DIR" | comm -13 - "$PREVIOUS_MANIFEST" | while read -r path; do
+        comm -13 "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" "$PREVIOUS_MANIFEST" | while read -r path; do
             rm "$PKGMAN_ROOT/$path"
         done
     fi
 
-    run_hook post-install "$pkg" "$PREVIOUS_MANIFEST"
+    cd "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
+    run_hook post-install "$pkg"
 }
 
 pkg_install() {
@@ -435,13 +441,13 @@ pkg_remove() {
     [ -e "$MANIEFST" ] || die "Package not installed"
 
     info "Removing $pkg"
-    while read -r file; do
+    sort -r "$MANIEFST" | while read -r file; do
         if [ -d "$PKGMAN_ROOT/$file" ]; then
             rmdir "$PKGMAN_ROOT/$file" 2>/dev/null || true
         else
             rm -f "$PKGMAN_ROOT/$file"
         fi
-    done < "$MANIEFST"
+    done
 
     info "Removed $pkg"
 

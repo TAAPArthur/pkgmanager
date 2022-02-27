@@ -9,8 +9,9 @@ export PKGMAN_PATH="$WORKING_DIR"
 
 PATH=$PWD:$PATH
 
-create_factor_packages() {
+export PKGMAN_HOOK_PATH="$PWD/hooks"
 
+create_factor_packages() {
     $PKG_CMD new 0
     for i in $(seq 1 "${1:-12}"); do
         $PKG_CMD new "$i"
