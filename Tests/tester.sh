@@ -30,7 +30,7 @@ run_test() {
     set -e
     . "$1"
 }
-for test_file in Tests/*-*.sh; do
+for test_file in Tests/"$1"*-*.sh; do
     mkdir -p "$WORKING_DIR"
     (
         f="$PWD/$test_file"
