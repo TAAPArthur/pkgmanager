@@ -127,20 +127,22 @@ run_hook(){
 pkg_read_version() {
     path=$1
     full_version=${2:-0}
-    for file in "$path/version" "$path/.version"; do
-        [ -r "$file" ] || continue
-        read -r version rep <"$file"
-        if [ "$full_version" -eq 0 ]; then
-            echo "$version"
-        else
-            echo "${version}_$rep"
-        fi
-        break
-    done
+    read -r version rep <"$path/version"
+    if [ "$full_version" -eq 0 ]; then
+        echo "$version"
+    elif [ "$full_version" -eq 1 ]; then
+        echo "${version}_$rep"
+    else
+        echo "$version $rep"
+    fi
 }
 
 pkg_read_full_version() {
     pkg_read_version "$1" 1
+}
+
+pkg_read_raw_version() {
+    pkg_read_version "$1" 2
 }
 
 # Searches "$PKGMAN_PATH" for the specified package
@@ -318,7 +320,8 @@ pkg_build_helper() {
     run_hook pre-build "$pkg"
 
     # actually build
-    "$path/build" "$DEST_DIR"
+    # shellcheck disable=2046
+    "$path/build" "$DEST_DIR" $(pkg_read_raw_version "$path" )
     METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     mkdir -p "$METADATA_DIR"
     cp -R "$path"/* "$METADATA_DIR"
