@@ -495,9 +495,17 @@ action_extract_sources() {
 
 _get_build_order() {
     # shellcheck disable=2030
-    for pkg do
-        echo "$(pkg_find_nested_deps "$pkg" | sort -u | wc -l) $pkg"
-    done | sort -n | cut -d" " -f2
+    {
+        if [ $# -eq 0 ]; then
+            while read -r pkg; do
+                echo "$(pkg_find_nested_deps "$pkg" | sort -u | wc -l) $pkg"
+            done
+        else
+            for pkg do
+                echo "$(pkg_find_nested_deps "$pkg" | sort -u | wc -l) $pkg"
+            done
+        fi
+    } | sort -n | cut -d" " -f2
 }
 
 action_depends () {
@@ -537,7 +545,6 @@ action_manifest () {
 
 pkg_determine_out_of_date() {
     pkg_list_installed | while read -r pkg v r; do
-        debug "$v $r" != "$(pkg_read_full_version "$pkg")"
         if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
             echo "$pkg"
         fi
@@ -545,7 +552,7 @@ pkg_determine_out_of_date() {
 }
 
 action_outdated() {
-    pkg_determine_out_of_date
+    pkg_determine_out_of_date | _get_build_order
 }
 action_fetch() {
     pkg_fetch
