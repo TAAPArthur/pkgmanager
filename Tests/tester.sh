@@ -40,6 +40,7 @@ for test_file in Tests/"$1"*-*.sh; do
         cd "$WORKING_DIR"
         export HOME="$WORKING_DIR/home"
         export PKGMAN_ROOT="$WORKING_DIR/fakeroot"
+        export PKGMAN_DEPEND_MAP_FILE="$WORKING_DIR/alias_file"
         mkdir -p "$PKGMAN_ROOT"
 
         printf "%s..." "${f#"$OLDPWD/"}"
