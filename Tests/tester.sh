@@ -10,6 +10,7 @@ export PKGMAN_PATH="$WORKING_DIR"
 PATH=$PWD:$PATH
 
 export PKGMAN_HOOK_PATH="$PWD/hooks"
+export PKGMAN_SOURCE_FIX_FILE="$PWD/compatibility/source_fix"
 
 create_factor_packages() {
     $PKG_CMD new 0

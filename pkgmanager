@@ -26,6 +26,7 @@ PKGMAN_UNPRIVILEGED_USER="${PKGMAN_UNPRIVILEGED_USER:-nobody}"
 
 PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME.d/}"
 PKGMAN_DEPEND_MAP_FILE=${PKGMAN_DEPEND_MAP_FILE:-"/$PKGMAN_METADATA_BASE_DIR/aliases"}
+PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
 
 ############## General helpers
@@ -176,8 +177,7 @@ pkg_read_sources() {
     version=$2
     for file in "$path/sources" "$path/.sources"; do
         [ -r "$file" ] || continue
-        sed '/^#/d; /^$/d' "$file" |
-        sed -e "s/ARCH/$(uname -m)/g" -e "s/VERSION/$version/g" -e "s/PACKAGE/$pkg/g"
+        sed '/^#/d; /^$/d' "$file"
     done
 }
 
@@ -257,7 +257,14 @@ pkg_download() {
     pkg=$1
     path=$2
     version=$3
-    pkg_read_sources "$path" "$version" | grep "^\w*://" | download_sources "$pkg"
+    pkg_read_sources "$path" "$version" | grep "^\w*://" |
+        {
+            if [ -x "$PKGMAN_SOURCE_FIX_FILE" ]; then
+                $PKGMAN_SOURCE_FIX_FILE "$pkg" "$version"
+            else
+                cat -
+            fi
+        } | download_sources "$pkg"
 }
 
 pkg_extract_sources() {
