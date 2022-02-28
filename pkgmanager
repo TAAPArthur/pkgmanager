@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PKGMAN_NAME=pkgman
+PKGMAN_NAME=pkgmanager
 PKGMAN_ROOT="${PKGMAN_ROOT:-/}"
 PKGMAN_METADATA_ROOT="${PKGMAN_METADATA_ROOT:-$PKGMAN_ROOT}"
 
@@ -24,8 +24,8 @@ PKGMAN_TMPDIR="${PKGMAN_TMPDIR:-/tmp/$PKGMAN_NAME}/$$"
 PKGMAN_MAX_NESTED_DEPENDS="${PKGMAN_MAX_NESTED_DEPENDS:-64}"
 PKGMAN_UNPRIVILEGED_USER="${PKGMAN_UNPRIVILEGED_USER:-nobody}"
 
-PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME.d/}"
 PKGMAN_DEPEND_MAP_FILE=${PKGMAN_DEPEND_MAP_FILE:-"/$PKGMAN_METADATA_BASE_DIR/aliases"}
+PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME/hooks.d}"
 PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
 
@@ -41,7 +41,7 @@ info() {
 }
 
 debug() {
-    [ -z "$PKGMAN_DDBEUG" ] || echo "DEBUG: $*" >&2
+    [ -z "$PKGMAN_DDEBUG" ] || echo "DEBUG: $*" >&2
 }
 
 decompress() {
@@ -86,6 +86,7 @@ download_sources() {
         fi
     done
 }
+
 get_default_pkg() {
     basename "$PWD"
 }
@@ -289,6 +290,7 @@ pkg_extract_sources() {
         mkdir -p "$dest/$dirname"
         tmp="$path/.tmp"
         mkdir -p "$tmp"
+
         extract "$fullpath" "$tmp"
         # shellcheck disable=2144
         if [ -d "$tmp"/* ]; then
