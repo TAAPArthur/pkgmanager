@@ -287,6 +287,8 @@ pkg_extract_sources() {
         if [ -d "$tmp"/* ]; then
             mv "$tmp"/*/* "$dest/$dirname"
             rmdir "$path/.tmp"/*
+        elif [ -f "$tmp"/* ]; then
+            mv "$tmp" "$dest/$dirname/$(basename "$fullpath")"
         else
             mv "$tmp" "$dest/$dirname"
         fi
