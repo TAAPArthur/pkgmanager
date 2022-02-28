@@ -11,9 +11,6 @@ long_help() {
             ;;
     esac
     printf "[pkg_list]\n"
-    case "$1" in
-        fork ) return;
-    esac
     echo "If not specified the basename of the current directory will be used"
     echo "Also accepts paths instead of packages"
     case "$1" in
@@ -32,7 +29,6 @@ short_help() {
     extract          --  Extract sources into current directory
     fetch            --  update repo
     find             --  search for a package by literal name
-    fork             --  Copy the package info into current directory
     install          --  Intsall built package
     list             --  List install packages
     list-ext         --  List all extensions

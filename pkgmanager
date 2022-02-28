@@ -536,15 +536,6 @@ pkg_revdepends() {
 
 ############ External commands
 
-action_fork() {
-    for pkg do
-        [ ! -d "$pkg" ]
-        path=$(pkg_find "$pkg")
-        mkdir "$pkg"
-        cp -R "$path" "$pkg"
-    done
-}
-
 action_find() {
     [ $# -ne 0 ] || set -- "$(get_default_pkg)"
     for pkg do
@@ -724,7 +715,6 @@ case "$action" in
     e|extract)                action_extract_sources "$@";;
     fetch)                    action_fetch "$@";;
     find)                     action_find "$@";;
-    f|fork)                   action_fork "$@";;
     get-metadata-install-dir) echo "$PKGMAN_METADATA_INSTALL_DIR/$1";;
     i|install)                action_install "$@";;
     list-ext)                 action_list_ext "$@" ;;

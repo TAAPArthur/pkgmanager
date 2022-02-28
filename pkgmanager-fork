@@ -1,0 +1,12 @@
+#!/bin/sh -e
+# Copy the package info into current directory
+# pkg_list
+# Used to clone a pkg into the current directory
+
+for pkg do
+    [ ! -e "$pkg" ]
+    path=$(pkgmanager find "$pkg")
+    mkdir "$pkg"
+    cp -R "$path"/* "$pkg/"
+done
+
