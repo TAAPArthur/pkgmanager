@@ -161,21 +161,6 @@ pkg_find() {
     echo "$pkg"
 }
 
-pkg_fetch() {
-    for_each_in_path "$PKGMAN_PATH" ".git" | while read -r path; do
-        (
-            cd "$path/.."
-
-            run_hook pre-fetch
-
-            git pull --rebase
-
-            run_hook post-fetch
-
-        ) || die "Failed to pull $path"
-    done
-}
-
 pkg_search() {
     target=$1
     for_each_in_path "$PKGMAN_PATH" | while read -r path; do
@@ -644,7 +629,13 @@ action_outdated() {
 }
 
 action_fetch() {
-    pkg_fetch
+    for_each_in_path "$PKGMAN_PATH" ".git" | while read -r path; do
+        (
+            cd "$path/.."
+            git pull --rebase
+
+        ) || die "Failed to pull $path"
+    done
 }
 
 action_revdepends() {
