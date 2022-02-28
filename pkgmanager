@@ -446,7 +446,11 @@ pkg_install_helper() {
 
     if [ -r "$PREVIOUS_MANIFEST" ]; then
         comm -13 "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" "$PREVIOUS_MANIFEST" | while read -r path; do
-            rm "$PKGMAN_ROOT/$path"
+            if [ -f "$PKGMAN_ROOT/$path" ]; then
+                rm "$PKGMAN_ROOT/$path"
+            else
+                rmdir "$PKGMAN_ROOT/$path" 2>/dev/null || true
+            fi
         done
     fi
 
