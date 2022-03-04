@@ -220,9 +220,11 @@ pkg_find_ext() {
 # Searches "$PKGMAN_PATH" for the specified package by exact name
 pkg_find() {
     target=$1
-    pkg="$(for_each_in_path "$PKGMAN_PATH" "$target" | head -n1)"
-    [ -n "$pkg" ] || return 1
-    echo "$pkg"
+    search_path="$PKGMAN_PATH"
+    [ "${PKGMANAGER_HIDE_INSTALL_DIR:-0}" -eq 1 ] || search_path=$search_path:$PKGMAN_METADATA_INSTALL_DIR
+    path="$(for_each_in_path "$search_path" "$target" | head -n1)"
+    [ -n "$path" ] || return 1
+    echo "$path"
 }
 
 # Like find but accepts wildcards

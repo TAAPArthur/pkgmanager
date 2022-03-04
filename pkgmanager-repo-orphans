@@ -3,7 +3,7 @@
 # Takes no arguments
 
 pkgmanager list | while read -r pkg _; do
-    if ! pkgmanager find "$pkg" >/dev/null; then
+    if ! PKGMANAGER_HIDE_INSTALL_DIR=1 pkgmanager find "$pkg" >/dev/null; then
         echo "$pkg"
     fi
 done
