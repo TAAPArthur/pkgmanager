@@ -4,18 +4,22 @@ PREFIX = /usr
 all:
 
 install:
-	mkdir $(DESTDIR)$(PREFIX)/bin
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp $(PKG) $(DESTDIR)$(PREFIX)/bin
 
+install-ext:
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp $(PKG)-* $(DESTDIR)$(PREFIX)/bin
+
 install-hooks:
-	mkdir $(DESTDIR)/etc/pkgmanger/hooks.d/
+	mkdir -p $(DESTDIR)/etc/pkgmanger/hooks.d/
 	cp hooks/* $(DESTDIR)/etc/pkgmanger/hooks.d/
 
 install-compatibility:
-	mkdir $(DESTDIR)/etc/pkgmanger/
-	cp source_fix $(DESTDIR)/etc/pkgmanger/
+	mkdir -p $(DESTDIR)/etc/pkgmanger/
+	cp compatibility/source_fix $(DESTDIR)/etc/pkgmanger/
 
-install-all: install install-hooks install-compatibility
+install-all: install install-ext install-hooks install-compatibility
 
 test: unittest inttest functionaltest edgetest
 
@@ -30,7 +34,5 @@ functionaltest: inttest
 
 edgetest: functionaltest
 	./Tests/tester.sh 11
-
-unittest:
 
 .PHONY: test unittest inttest functionaltest edgetest
