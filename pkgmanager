@@ -173,13 +173,7 @@ pkg_search() {
 }
 
 pkg_read_sources() {
-    path=$1
-    pkg="$(basename "$1")"
-    version=$2
-    for file in "$path/sources" "$path/.sources"; do
-        [ -r "$file" ] || continue
-        sed '/^#/d; /^$/d' "$file"
-    done
+    [ -e "$1/sources" ] && sed '/^#/d; /^$/d' "$1/sources"
 }
 
 _pkg_find_nested_deps() {
@@ -258,7 +252,7 @@ pkg_download() {
     pkg=$1
     path=$2
     version=$3
-    pkg_read_sources "$path" "$version" | grep "^\w*://" |
+    pkg_read_sources "$path" | grep "^\w*://" |
         {
             if [ -x "$PKGMAN_SOURCE_FIX_FILE" ]; then
                 $PKGMAN_SOURCE_FIX_FILE "$pkg" "$version"
@@ -282,7 +276,7 @@ pkg_extract_sources() {
     mkdir -p "$dest"
 
     # Handle git repo next since we can't clone into a non-empty dir
-    pkg_read_sources "$path" "$version" | grep "^git+" | while read -r rpath dirname; do
+    pkg_read_sources "$path" | grep "^git+" | while read -r rpath dirname; do
         git clone "${rpath#git+}" "$dest/$dirname"
     done
 
@@ -304,7 +298,7 @@ pkg_extract_sources() {
     done
 
     # Handle local files last so they can override any of the above in case of conflicts
-    pkg_read_sources "$path" "$version" | grep -v -e "^\w*://" -e "^git+"| while read -r rpath dirname; do
+    pkg_read_sources "$path" | grep -v -e "^\w*://" -e "^git+"| while read -r rpath dirname; do
         if [ "git+${rpath#git+}" = "$rpath" ]; then
             git clone "${rpath#git+}" "$dest/$dirname"
         else
@@ -336,7 +330,6 @@ pkg_ext() {
 pkg_build_helper() {
     pkg=$1
     path=$2
-    [ -x "$path/build" ]
 
     if [ "${path#/}" = "$path" ]; then
         path="$PWD/$path"
@@ -357,9 +350,10 @@ pkg_build_helper() {
 
     run_hook pre-build "$pkg"
 
+    [ -r "$path/build" ] && [ ! -x "$path/build" ] && die "$path/build exists but isn't executable"
     # actually build
     # shellcheck disable=2086
-    "$path/build" "$DEST_DIR" $raw_version
+    [ -r "$path/build" ] && "$path/build" "$DEST_DIR" $raw_version
     METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     mkdir -p "$METADATA_DIR"
     cp -R "$path"/* "$METADATA_DIR"

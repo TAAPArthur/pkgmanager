@@ -23,11 +23,12 @@ or
 
 | Name    | Required | Comments/Blank lines | Format |
 | ------- | -------- | -------------------- | ------ |
-| build   | Yes      | N/A                  | Any executable format
+| build   | No\*     | N/A                  | Any executable format
 | depends | No       | Yes                  | pkg [label]
-| sources | Yes      | Yes                  | source [dest]
+| sources | No\*     | Yes                  | source [dest]
 | version | Yes      | Yes                  | upstream_version repository_version
 
+\* - Different value that upstream KISS
 Note that there are less required files than upstream kiss. We don't use checksums (by default; use a hook if you want them)
 
 ### build
