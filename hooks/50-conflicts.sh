@@ -7,7 +7,6 @@ case "$TYPE" in
                 path=${path#.}
                 # If package is owned by another package
                 if [ "$(pkgmanager owns "$path" || echo "$PKG")" != "$PKG" ]; then
-                    debug handling conflict
                     # if you don't want conflict management either
                     # (1) exit with non-zero status to abort the install
                     # (2) rm "$path"

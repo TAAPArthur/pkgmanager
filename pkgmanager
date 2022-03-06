@@ -42,10 +42,6 @@ info() {
     echo "$@"
 }
 
-debug() {
-    [ -z "$PKGMAN_DDEBUG" ] || echo "DEBUG: $*" >&2
-}
-
 decompress() {
     case $1 in
         *.tbz|*.bz2) bzip2 -d ;;
@@ -72,11 +68,10 @@ download_sources() {
             _filename="$_dir/$_filename"
         fi
         _fullpath="$_dest/$_filename"
-        debug "checking cache for $_url"
         if [ ! -e "$_fullpath" ]; then
-            debug "downloading $_url"
             download_file "$_url" > "$_fullpath.tmp"
             mv "$_fullpath.tmp" "$_fullpath"
+            info "Downloaded $_url"
         fi
         if [ -z "$_dir" ]; then
             echo "$_fullpath" "."
@@ -97,7 +92,6 @@ create_working_dir() {
 }
 
 extract() {
-    debug "Extracting $*"
     _fullpath=$1
     _destdir=$2
     [ -n "$_fullpath" ] && [ -n "$_destdir" ]
@@ -127,7 +121,7 @@ for_each_in_path() {
 run_hook(){
     export TYPE="$1"
     export PKG="$2"
-    debug "Running hook '$TYPE'"
+    info "Running hook '$TYPE'"
     for _hook in $(for_each_in_path "$PKGMAN_HOOK_PATH") ; do
         for _script in "$_hook/"*.sh; do
             if [ -r "$_script" ]; then
@@ -311,7 +305,6 @@ pkg_download() {
 }
 
 pkg_extract_sources() {
-    debug "Extracting sources $*"
     pkg=$1
     path=$2
     dest=$3
@@ -393,14 +386,13 @@ pkg_build_helper() {
     mkdir -p "$METADATA_DIR"
     cp -R "$path"/* "$METADATA_DIR"
 
-    debug "Version $version"
     cd "$DEST_DIR"
     run_hook post-build "$pkg"
 
     # todo hooks
     pkg_gen_manifest "$DEST_DIR" > "$METADATA_DIR/manifest"
     BUILD_CACHE="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
-    debug "Saving build to $BUILD_CACHE"
+    info "Saving build to $BUILD_CACHE"
     tar -c -C "$DEST_DIR" . > "$BUILD_CACHE"
 }
 
