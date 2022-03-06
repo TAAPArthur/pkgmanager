@@ -1,9 +1,11 @@
 #!/bin/sh -e
 # Shows the active maintainer for a package
+# [pkg_list]
 # The maintainer is the last person to modify version
 
+[ $# -ne 0 ] || { set -- "$PWD"; }
 for pkg ; do
-    path=$(pkgmanager find "$pkg" | cut -f1)
+    path=$(pkgmanager find "$(basename "$pkg")" | cut -f1)
     cd "$path" && git blame --line-porcelain version | sed -n 's/^author\(-mail\| \)//p'
 done
 

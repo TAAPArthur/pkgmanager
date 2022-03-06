@@ -1,17 +1,16 @@
 #!/bin/sh -e
 # List install/build stats for a package
-# stat_type list_of_packages
+# stat_type [list_of_packages]
 # The stats hook is needed for this to work
 
 METADATA=$(pkgmanager get-metadata-install-dir)
 
 stat_type=$1
 shift
-if [ "$#" -eq 0 ]; then
-    # shellcheck disable=2046
-    set -- $(pkgmanager list)
-fi
+
+[ $# -ne 0 ] || set -- "$PWD"
 for pkg ; do
+    pkg="$(basename "$pkg")"
     read -r label < "$METADATA/$pkg/stats/$stat_type"
     printf "%s\t%s\n" "$label" "$pkg"
 done

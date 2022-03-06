@@ -1,7 +1,9 @@
 #!/bin/sh -e
 # Prints the list of installed packages
+# [list_of_packages]
 
 MANIFEST="$(pkgmanager get-metadata-install-dir)"
+[ $# -ne 0 ] || set -- "$PWD"
 for pkg do
-    cat "$MANIFEST/$pkg/manifest"
+    cat "$MANIFEST/$(basename "$pkg")/manifest"
 done
