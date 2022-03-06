@@ -39,7 +39,7 @@ die() {
 }
 
 info() {
-    echo "$@"
+    echo "$@" >&2
 }
 
 decompress() {

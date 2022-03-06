@@ -8,6 +8,7 @@ case "$TYPE" in
                 if [ "$(pkgmanager owns "/$file" || echo "$PKG")" = "$PKG" ]; then
                     echo "/$file" > "$WORKING_DIR/post_manifest"
                 fi
+                info "Not updating $file"
                 rm "$file"
                 [ ! -e "$PREVIOUS_MANIFEST" ] || sed -i "s:^/$file\$::; /^\$/d" "$PREVIOUS_MANIFEST"
             fi
