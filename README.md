@@ -102,7 +102,6 @@ The package manager can be configured via the use of environment variables.
 | PKGMAN_ROOT               | /                          | Root directory to install to|
 | PKGMAN_SOURCE_CACHE_DIR   | sources                    | Where to store downloaded sources relative to PKGMAN_CACHE_DIR|
 | PKGMAN_SOURCE_TRANSLATE   | /etc/pkgmanager/source_fix | Points to a file to convert sources when downloading remote sources; Takes pkg and version as args|
-| PKGMAN_TMPDIR             | /tmp/pkgmanager/           | Temporary directory parent for installing and building|
 | PKGMAN_UNPRIVILEGED_USER  | nobody                     | User to switch which trying to build when root|
 
 # Hooks

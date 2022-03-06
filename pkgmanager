@@ -19,7 +19,6 @@ PKGMAN_METADATA_LOCK_FILE="$PKGMAN_METADATA_DIR/.lock"
 
 PKGMAN_AUTO_INSTALL=${PKGMAN_AUTO_INSTALL:-0}
 PKGMAN_FORCE=${PKGMAN_FORCE:-0}
-PKGMAN_TMPDIR="${PKGMAN_TMPDIR:-/tmp/$PKGMAN_NAME}/$$"
 
 PKGMAN_MAX_NESTED_DEPENDS="${PKGMAN_MAX_NESTED_DEPENDS:-64}"
 PKGMAN_UNPRIVILEGED_USER="${PKGMAN_UNPRIVILEGED_USER:-nobody}"
@@ -89,6 +88,12 @@ download_sources() {
 
 get_default_pkg() {
     basename "$PWD"
+}
+
+create_working_dir() {
+    WORKING_DIR="$(mktemp -d)"
+    mkdir -p "$WORKING_DIR"
+    trap 'rm -rf $WORKING_DIR' EXIT
 }
 
 extract() {
@@ -327,11 +332,12 @@ pkg_extract_sources() {
         git clone "${rpath#git+}" "$dest/$dirname"
     done
 
+    create_working_dir
     # Download in subshell to avoid risk of method modifying our
     # local vars
     ( pkg_download "$pkg" "$path" "$version" ) | while read -r fullpath dirname; do
         mkdir -p "$dest/$dirname"
-        tmp="$path/.tmp"
+        tmp="$WORKING_DIR/tmp_extraction_dir"
         mkdir -p "$tmp"
 
         extract "$fullpath" "$tmp"
@@ -340,7 +346,7 @@ pkg_extract_sources() {
             for file in "$tmp"/*/* "$tmp"/*/.[!.]*; do
                 { [ -e "$file" ] || [ -h "$file" ]; } && mv "$file" "$dest/$dirname"
             done
-            rmdir "$path/.tmp"/*
+            rmdir "$tmp"/*
         else
             mv "$tmp"/* "$dest/$dirname/" 2>/dev/null || true
             mv "$tmp"/.[!.]* "$dest/$dirname/" 2>/dev/null || true
@@ -365,9 +371,7 @@ pkg_build_helper() {
         path="$PWD/$path"
     fi
 
-    WORKING_DIR="$PKGMAN_TMPDIR/$pkg"
-    mkdir -p  "$WORKING_DIR"
-    trap 'rm -rf $PKGMAN_TMPDIR' EXIT
+    create_working_dir
     DEST_DIR="$WORKING_DIR/dest_dir"
     BUILD_DIR="$WORKING_DIR/build_dir"
     mkdir -p "$DEST_DIR"
@@ -444,9 +448,8 @@ pkg_build() {
 pkg_install_helper() {
     pkg=$1
     archive=$2
-    WORKING_DIR="$(mktemp -d)"
+    create_working_dir
     EXTRACTION_DIR="$WORKING_DIR/_fakeroot"
-    trap 'rm -rf $WORKING_DIR' EXIT
     mkdir -p "$EXTRACTION_DIR"
 
     METADATA_DIR="$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
