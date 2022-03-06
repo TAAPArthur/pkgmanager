@@ -337,12 +337,13 @@ pkg_extract_sources() {
         extract "$fullpath" "$tmp"
         # shellcheck disable=2144
         if [ -d "$tmp"/* ]; then
-            mv "$tmp"/*/* "$dest/$dirname"
+            for file in "$tmp"/*/* "$tmp"/*/.[!.]*; do
+                { [ -e "$file" ] || [ -h "$file" ]; } && mv "$file" "$dest/$dirname"
+            done
             rmdir "$path/.tmp"/*
-        elif [ -f "$tmp"/* ]; then
-            mv "$tmp" "$dest/$dirname/$(basename "$fullpath")"
         else
-            mv "$tmp" "$dest/$dirname"
+            mv "$tmp"/* "$dest/$dirname/" 2>/dev/null || true
+            mv "$tmp"/.[!.]* "$dest/$dirname/" 2>/dev/null || true
         fi
     done
 
