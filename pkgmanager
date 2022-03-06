@@ -69,7 +69,7 @@ download_sources() {
     while read -r _url _dir; do
         _filename="$(basename "$_url")"
         if [ -n "$_dir" ]; then
-            mkdir -p "$_dir"
+            mkdir -p "$_dest/$_dir"
             _filename="$_dir/$_filename"
         fi
         _fullpath="$_dest/$_filename"
