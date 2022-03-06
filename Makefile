@@ -12,12 +12,12 @@ install-ext:
 	cp $(PKG)-* $(DESTDIR)$(PREFIX)/bin
 
 install-hooks:
-	mkdir -p $(DESTDIR)/etc/pkgmanger/hooks.d/
-	cp hooks/* $(DESTDIR)/etc/pkgmanger/hooks.d/
+	mkdir -p $(DESTDIR)/etc/$(PKG)/hooks.d/
+	cp hooks/* $(DESTDIR)/etc/$(PKG)/hooks.d/
 
 install-compatibility:
-	mkdir -p $(DESTDIR)/etc/pkgmanger/
-	cp compatibility/source_fix $(DESTDIR)/etc/pkgmanger/
+	mkdir -p $(DESTDIR)/etc/$(PKG)/
+	cp compatibility/source_fix $(DESTDIR)/etc/$(PKG)/
 
 install-all: install install-ext install-hooks install-compatibility
 
