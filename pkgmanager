@@ -460,7 +460,7 @@ pkg_install_helper() {
     cd "$EXTRACTION_DIR"
     run_hook pre-install "$pkg" "$PREVIOUS_MANIFEST"
 
-    cp -R "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
+    cp -RPfp "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
     # Update manifest because hooks may have changed it
     pkg_gen_manifest "$EXTRACTION_DIR" > "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
 
