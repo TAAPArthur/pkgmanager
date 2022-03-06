@@ -23,7 +23,7 @@ or
 * No mandatory checksums. Can me implemented as hooks if one cared
 * No privilege escalation. We'll drop privileges when running as root, but won't gain them
 * Manifest file doesn't explicitly denote directories
-* Don't create "*.new" when override /etc. Instead, the protection is implemented as a hook
+* Don't create "\*.new" files when override /etc. Instead, the protection is implemented as a hook
 
 
 # Packaging System
@@ -93,7 +93,7 @@ The package manager can be configured via the use of environment variables.
 | PKGMAN_CACHE_DIR          | XDG_CACHE_HOME             | Parent directory for general cache files|
 | PKGMAN_DEPEND_MAP_FILE    | /var/db/pkgmanager/aliases | points to a 2-col, \t delimited file mapping dependency A to B|
 | PKGMAN_DOWNLOAD_CMD       | curl                       | Used to download remote sources|
-| PKGMAN_FORCE              | 0                          | Allows removable of packages even if other packages still depend on them|
+| PKGMAN_FORCE              | 0                          | Allows removable of packages even if other packages still depend on them and also forces re-downloading remote sources|
 | PKGMAN_HOOK_PATH          | /etc/pkgmanager/hooks.d/   | : separated list of hooks to source for key operations|
 | PKGMAN_MAX_NESTED_DEPENDS | 64                         | Controls how deep the dependency tree can be for a package|
 | PKGMAN_METADATA_BASE_DIR  | /var/db/pkgmanager         | Where to store metadata$PKGMAN_NAME}|

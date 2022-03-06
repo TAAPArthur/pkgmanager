@@ -68,7 +68,7 @@ download_sources() {
             _filename="$_dir/$_filename"
         fi
         _fullpath="$_dest/$_filename"
-        if [ ! -e "$_fullpath" ]; then
+        if [ "$PKGMAN_FORCE" -eq 1 ] || [ ! -e "$_fullpath" ]; then
             download_file "$_url" > "$_fullpath.tmp"
             mv "$_fullpath.tmp" "$_fullpath"
             info "Downloaded $_url"
