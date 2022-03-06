@@ -2,7 +2,7 @@
 
 
 mkdir git_repo
-( cd git_repo; git init; touch gitFile; git add .; git  -c user.name='Paul Draper' -c user.email='my@email.org' commit -m"Init")
+( cd git_repo; git init; touch gitFile; git add .; git -c user.name='Test' -c user.email='user@test.com' commit -m"Init")
 
 mkdir tarDir
 touch tarDir/tarFile

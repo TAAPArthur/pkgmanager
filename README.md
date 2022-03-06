@@ -16,6 +16,16 @@ or
 * gzip, bzip2, xz, zstd -- to handle compressed archives
 * unzip -- for zip files
 
+# Key differences with KISS
+* Raw packager has less than of kiss. The entire repo (package manager, extension, hooks and test) are about the same amount of lines as just the kiss package manager
+* Hooks are sourced not executed.
+* Sets of hooks are different
+* No mandatory checksums. Can me implemented as hooks if one cared
+* No privilege escalation. We'll drop privileges when running as root, but won't gain them
+* Manifest file doesn't explicitly denote directories
+* Don't create "*.new" when override /etc. Instead, the protection is implemented as a hook
+
+
 # Packaging System
 [Upstream kiss' packaging system](https://kisslinux.org/wiki/package-system) is basically a super set.
 
@@ -106,3 +116,7 @@ Each hook is sourced. The `$1` will contain the type and `$2` the package. These
 | pre-build     | BUILD_DIR       |
 | pre-remove    | PKG_METADATA_DIR|
 | pre-install   | DESTDIR         |
+
+# Tests
+There's a simple test suite to guard against regressions.
+`make test`

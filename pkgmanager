@@ -136,7 +136,7 @@ run_hook(){
 # These methods all start with "pkg_" + read/get/is/gen etc.
 # Basically anything that doesn't touching disk or other state manipulation
 # These methods just read state and have the same restriction has the above helpers
-# int that local variables must start with _
+# in that local variables must start with _
 
 pkg_read_version() {
     _path=$1
@@ -327,7 +327,7 @@ pkg_extract_sources() {
         git clone "${rpath#git+}" "$dest/$dirname"
     done
 
-    # Download in subshell to avoid risk of method modifing our
+    # Download in subshell to avoid risk of method modifying our
     # local vars
     ( pkg_download "$pkg" "$path" "$version" ) | while read -r fullpath dirname; do
         mkdir -p "$dest/$dirname"
@@ -352,7 +352,7 @@ pkg_extract_sources() {
         if [ "git+${rpath#git+}" = "$rpath" ]; then
             git clone "${rpath#git+}" "$dest/$dirname"
         else
-            cp "$path/$rpath"  "$dest/$dirname"
+            cp "$path/$rpath" "$dest/$dirname"
         fi
     done
 }
