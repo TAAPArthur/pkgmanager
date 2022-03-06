@@ -366,7 +366,7 @@ pkg_build_helper() {
 
     WORKING_DIR="$PKGMAN_TMPDIR/$pkg"
     mkdir -p  "$WORKING_DIR"
-    trap 'rm -rf $WORKING_DIR' EXIT
+    trap 'rm -rf $PKGMAN_TMPDIR' EXIT
     DEST_DIR="$WORKING_DIR/dest_dir"
     BUILD_DIR="$WORKING_DIR/build_dir"
     mkdir -p "$DEST_DIR"

@@ -6,8 +6,9 @@
 [ -n "$_PKGMAN_HAS_METADATA_LOCK" ] || _PKGMAN_HAS_METADATA_LOCK=1 exec flock -n -s "$(pkgmanager get-metadata-install-dir)/.lock" "$0" "$@"
 [ -n "$MANIFEST_LOCK" ] || MANIFEST_LOCK=1 exec flock -n "$1" "$0" "$@"
 
-TEMP="${PKGMAN_TMPDIR:-/tmp}/$$/.manifest"
-temp_manifest="$TEMP/.manifest"
+TEMP="${TMPDIR:-/tmp}/$$/"
+trap 'rmdir $TEMP' EXIT
+temp_manifest="$TEMP/manifest"
 mkdir -p "$TEMP"
 sort "$1" "$2" > "$temp_manifest"
 mv "$temp_manifest" "$1"
