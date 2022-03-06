@@ -13,4 +13,7 @@ mkdir -p "$TEMP"
 sort "$1" "$2" > "$temp_manifest"
 mv "$temp_manifest" "$1"
 
-[ -z "$3" ] || sed -i "s:^$3\$::; /^\$/d" "$1"
+[ -z "$3" ] || {
+    grep -Fvx "$3" "$1" > "$temp_manifest"
+    mv "$temp_manifest" "$1"
+}
