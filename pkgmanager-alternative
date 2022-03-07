@@ -8,7 +8,7 @@ if [ $# -eq 0 ]; then
     pkgmanager list | while read -r pkg _ ; do
         CONFLICT_DIR="$METADATA/$pkg/conflicts"
         if [ -d "$CONFLICT_DIR"  ]; then
-            find "$CONFLICT_DIR" -type f -exec printf "%s\t%s\n" "$pkg" {} \; | sed "s:\t$CONFLICT_DIR:\t:"
+            find "$CONFLICT_DIR" ! -type d -exec printf "%s\t%s\n" "$pkg" {} \; | sed "s:\t$CONFLICT_DIR:\t:"
         fi
     done
 else
