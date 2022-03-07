@@ -2,13 +2,13 @@
 # Swaps Replace path with pkg's implementation
 # pkg path
 
+CONFLICTS_BASE_DIR=$(pkgmanager get-metadata-dir)/conflicts
 remove_existing_file() {
     path=$1
     if [ -e "$PKGMAN_ROOT/$path" ]; then
         owner=$(pkgmanager owns "$path") || return 0
         METADATA=$(pkgmanager get-metadata-install-dir "$owner")
-        DIR="$METADATA/conflicts"
-        CONFLICT_PATH="$DIR/$path"
+        CONFLICT_PATH="$CONFLICTS_BASE_DIR/$owner/$path"
 
         mkdir -p "$(dirname "$CONFLICT_PATH")"
         cp -Pf "$PKGMAN_ROOT/$path" "$CONFLICT_PATH"
@@ -21,8 +21,7 @@ restore_conflict() {
     path=$2
     if [ -n "$pkg" ]; then
         METADATA=$(pkgmanager get-metadata-install-dir "$pkg")
-        DIR="$METADATA/conflicts"
-        CONFLICT_PATH="$DIR/$path"
+        CONFLICT_PATH="$CONFLICTS_BASE_DIR/$pkg/$path"
         mv "$CONFLICT_PATH" "$PKGMAN_ROOT/$path"
         echo "$path" | pkgmanager update-manifest "$METADATA/manifest" - "${CONFLICT_PATH#"$PKGMAN_ROOT"}"
     else

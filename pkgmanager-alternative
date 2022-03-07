@@ -3,10 +3,10 @@
 # With no args, it prints pkg conflict_path (tab-separated)
 # Else it reads stdin and calls swap-conflict
 
-METADATA=$(pkgmanager get-metadata-install-dir)
+CONFLICTS_BASE_DIR=$(pkgmanager get-metadata-dir)/conflicts
 if [ $# -eq 0 ]; then
     pkgmanager list | while read -r pkg _ ; do
-        CONFLICT_DIR="$METADATA/$pkg/conflicts"
+        CONFLICT_DIR="$CONFLICTS_BASE_DIR/$pkg"
         if [ -d "$CONFLICT_DIR"  ]; then
             find "$CONFLICT_DIR" ! -type d -exec printf "%s\t%s\n" "$pkg" {} \; | sed "s:\t$CONFLICT_DIR:\t:"
         fi

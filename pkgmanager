@@ -737,6 +737,7 @@ case "$action" in
     fetch)                    action_fetch "$@";;
     find)                     action_find "$@";;
     get-metadata-install-dir) echo "$PKGMAN_METADATA_INSTALL_DIR/$1";;
+    get-metadata-dir) echo "$PKGMAN_METADATA_DIR";;
     i|install)                action_install "$@";;
     list-ext)                 action_list_ext "$@" ;;
     l|list)                   action_list "$@";;
