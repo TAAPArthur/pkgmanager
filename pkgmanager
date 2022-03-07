@@ -384,7 +384,7 @@ pkg_build_helper() {
     [ -r "$path/build" ] && "$path/build" "$DEST_DIR" $raw_version
     METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     mkdir -p "$METADATA_DIR"
-    cp -R "$path"/* "$METADATA_DIR"
+    cp -RP "$path"/* "$METADATA_DIR"
 
     cd "$DEST_DIR"
     run_hook post-build "$pkg"
@@ -456,7 +456,7 @@ pkg_install_helper() {
     cd "$EXTRACTION_DIR"
     run_hook pre-install "$pkg" "$PREVIOUS_MANIFEST"
 
-    cp -RPfp "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
+    cp -RPf "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
     # Update manifest because hooks may have changed it
     pkg_gen_manifest "$EXTRACTION_DIR" > "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
 
