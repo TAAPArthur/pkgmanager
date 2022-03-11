@@ -419,21 +419,21 @@ pkg_build_depedencies() {
     filterStr=$2
     level=${3:-0}
     pkg_find_deps "$target_pkg" "$filterStr" |
-    while read -r dep_pkg _; do
-        if ! pkg_is_installed "$dep_pkg"; then
-            dep_path="$(pkg_find "$dep_pkg")"
-            if ! pkg_is_built "$dep_pkg" "$dep_path" >/dev/null; then
-                [ "$level" -ne "$PKGMAN_MAX_NESTED_DEPENDS" ] || die "Too many nested dependencies"
-                pkg_build_depedencies "$dep_path" "" "$((level+1))"
-                pkg_build_single "$dep_pkg" "$dep_path"
+        while read -r dep_pkg _; do
+            if ! pkg_is_installed "$dep_pkg"; then
+                dep_path="$(pkg_find "$dep_pkg")"
+                if ! pkg_is_built "$dep_pkg" "$dep_path" >/dev/null; then
+                    [ "$level" -ne "$PKGMAN_MAX_NESTED_DEPENDS" ] || die "Too many nested dependencies"
+                    pkg_build_depedencies "$dep_path" "" "$((level+1))"
+                    pkg_build_single "$dep_pkg" "$dep_path"
+                fi
+                pkg_install "$dep_pkg" "$dep_path"
             fi
-            pkg_install "$dep_pkg" "$dep_path"
-        fi
-    done
+        done
 }
 
 pkg_build() {
-    pkg_build_depedencies "$1"
+    pkg_build_depedencies "$2"
     pkg_build_single "$1" "$2"
 }
 

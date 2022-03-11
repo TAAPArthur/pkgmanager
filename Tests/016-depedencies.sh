@@ -6,7 +6,8 @@ create_factor_packages
 # poison 7
 echo "exit 2" >> 7/build
 
-$PKG_CMD b 12
+mkdir temp;
+( cd temp; $PKG_CMD b 12 )
 
 $PKG_CMD l 1 2 3 4 6
 
