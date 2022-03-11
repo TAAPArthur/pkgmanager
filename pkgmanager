@@ -393,7 +393,8 @@ pkg_build_helper() {
     pkg_gen_manifest "$DEST_DIR" > "$METADATA_DIR/manifest"
     BUILD_CACHE="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
     info "Saving build to $BUILD_CACHE"
-    tar -c -C "$DEST_DIR" . > "$BUILD_CACHE"
+    tar -c -C "$DEST_DIR" . > "$BUILD_CACHE.tmp"
+    mv "$BUILD_CACHE.tmp" "$BUILD_CACHE"
 }
 
 pkg_build_single() {
