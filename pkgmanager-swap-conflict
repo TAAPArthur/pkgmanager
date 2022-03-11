@@ -5,7 +5,7 @@
 CONFLICTS_BASE_DIR=$(pkgmanager get-metadata-dir)/conflicts
 remove_existing_file() {
     path=$1
-    if [ -e "$PKGMAN_ROOT/$path" ]; then
+    if [ -e "$PKGMAN_ROOT/$path" ] || [ -h "$PKGMAN_ROOT/$path" ]; then
         owner=$(pkgmanager owns "$path") || return 0
         METADATA=$(pkgmanager get-metadata-install-dir "$owner")
         CONFLICT_PATH="$CONFLICTS_BASE_DIR/$owner/$path"
