@@ -221,7 +221,7 @@ pkg_find() {
     target=$1
     search_path="$PKGMAN_PATH"
     [ "${PKGMANAGER_HIDE_INSTALL_DIR:-0}" -eq 1 ] || search_path=$search_path:$PKGMAN_METADATA_INSTALL_DIR
-    path="$(for_each_in_path "$search_path" "$target" | head -n1)"
+    path="$(for_each_in_path "$search_path" "$target" | { read -r path; echo "$path"; })"
     [ -n "$path" ] || return 1
     echo "$path"
 }
@@ -253,7 +253,7 @@ _pkg_find_nested_deps() {
         [ -z "$depend" ] && continue
         if [ -r "$PKGMAN_DEPEND_MAP_FILE" ]; then
             if temp=$(grep "^$depend\t" "$PKGMAN_DEPEND_MAP_FILE"); then
-                depend="$(echo "$temp" | cut -f2)"
+                depend="$(echo "$temp" | { read -r _ d; echo "$d"; })"
                 [ -z "$depend" ] && continue
             fi
         fi
@@ -723,7 +723,7 @@ action_list_ext() {
 action_ext() {
     name="pkgmanager-$1"
     shift
-    path=$(pkg_find_ext "$name" | head -n1 | cut -f1)
+    path=$(pkg_find_ext "$name" | { read -r p _; echo "$p"; })
     [ -n "$path" ]
     exec $path "$@"
 }

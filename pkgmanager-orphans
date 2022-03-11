@@ -14,7 +14,7 @@ filter() {
     fi
 }
 pkgmanager list | while read -r pkg _ ; do
-    if [ -z "$(pkgmanager revdepends "$pkg" | filter | head -n1)" ]; then
+    if [ -z "$(pkgmanager revdepends "$pkg" | filter)" ]; then
         echo "$pkg"
     fi
 done

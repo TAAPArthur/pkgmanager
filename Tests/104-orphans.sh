@@ -13,8 +13,7 @@ $PKG_CMD revdepends 0 | grep -v "\tmake\$" || true
 $PKG_CMD revdepends 0 | grep -v "\tmake\$" || true
 
 [ "$($PKG_CMD orphans)" = 1 ]
-[ "$($PKG_CMD orphans make | head -n1)" = 0 ]
-
+$PKG_CMD orphans make | grep -x 0
 
 $PKG_CMD b 4
 $PKG_CMD i 4

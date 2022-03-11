@@ -22,7 +22,7 @@ case "$TYPE" in
 
    pre-install)
        mkdir -p "$PKGMAN_METADATA_BASE_INSTALL_DIR/$PKG/stats"
-       printf "%s\t%s\n" "$(du -s . | cut -f1)" "$( { du -sh . || du -s . ; } | cut -f1)" > "$PKGMAN_METADATA_BASE_INSTALL_DIR/$PKG/stats/install_size"
+       printf "%s\t%s\n" "$(du -s . | { read -r T _ ; echo "$T";})" "$( { du -sh . || du -s . ; } | { read -r T _ ; echo "$T"; })" > "$PKGMAN_METADATA_BASE_INSTALL_DIR/$PKG/stats/install_size"
        printf "%s\t%s\n" "$(date -u +%F_%H:%M:%S)" "$(date)" > "$PKGMAN_METADATA_BASE_INSTALL_DIR/$PKG/stats/install_time"
    ;;
 esac

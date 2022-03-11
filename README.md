@@ -7,9 +7,8 @@ or
 
 # Dependencies
 ## Required
-* POSIX utilities (specifically cat, comm, grep, sed, sh and su)
+* POSIX utilities
 ## Suggested
-* POSIX utilities (specifically diff, tee)
 * git   -- for git sources
 * curl  -- for remote sources
 * tar   -- for tar balls

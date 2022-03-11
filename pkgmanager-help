@@ -50,8 +50,7 @@ else
         pkg=${pkg#pkgmanager-}
         printf "%s - %s\n" "$pkg" "$(short_help | sed -n "s/\s* $pkg .*--  //p")"
         echo "-----"
-        full_path=$(pkgmanager list-ext "$pkg" | head -n1 | cut -f2)
-        if [ -n "$full_path" ]; then
+        if full_path=$(pkgmanager list-ext "$pkg" | { read -r _ p _; echo "$p"; }); then
             sed -n "2,7s/^#\s*//p" "$full_path"
         else
             long_help "$pkg"
