@@ -411,7 +411,7 @@ pkg_build_single() {
                 exec su "$USER"
             fi
         }
-    fi
+    fi || die "Failed to build $pkg"
     info "built $pkg"
 }
 
@@ -489,7 +489,7 @@ pkg_install() {
 
     archive="$(pkg_get_built "$pkg" "$path")"
     mkdir -p "$PKGMAN_METADATA_INSTALL_DIR"
-    _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_install_helper "$pkg" "$archive"
+    _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_install_helper "$pkg" "$archive" || die "Failed to install $pkg"
 
     info "installed $pkg"
 }
@@ -514,7 +514,7 @@ pkg_remove() {
     [ -d "$PKGMAN_METADATA_INSTALL_DIR/$pkg" ] || die "Package not installed"
 
     info "Removing $pkg"
-    _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_remove_helper "$pkg"
+    _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_remove_helper "$pkg" || die "Failed to remove $pkg"
 
     info "Removed $pkg"
 
