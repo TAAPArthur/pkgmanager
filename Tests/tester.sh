@@ -26,8 +26,8 @@ create_factor_packages() {
         rm -f blacklist
     done
     echo 0 make >> 1/depends
-    echo "$PKG_CMD list | grep '^1\s' || { echo depend '1' is not installed; exit 64; }" | tee -a 2/build 3/build >/dev/null
-    echo "$PKG_CMD list | grep 0 || { echo make depend '0' is not installed; exit 64; }" >> 1/build
+    echo "$PKG_CMD list 1 || { echo depend '1' is not installed; exit 64; }" | tee -a 2/build 3/build >/dev/null
+    echo "$PKG_CMD list 0 || { echo make depend '0' is not installed; exit 64; }" >> 1/build
 }
 
 run_test() {
