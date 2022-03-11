@@ -29,7 +29,7 @@ PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
 
 ############## General helpers
-# These methods may read global variables and all their local vairables should
+# These methods may read global variables and all their local variables should
 # start with '_'
 # They may only call methods in this category
 
@@ -414,7 +414,7 @@ pkg_build_single() {
     info "built $pkg"
 }
 
-pkg_build_depedencies() {
+pkg_build_dependencies() {
     target_pkg=$1
     filterStr=$2
     level=${3:-0}
@@ -424,7 +424,7 @@ pkg_build_depedencies() {
                 dep_path="$(pkg_find "$dep_pkg")"
                 if ! pkg_is_built "$dep_pkg" "$dep_path" >/dev/null; then
                     [ "$level" -ne "$PKGMAN_MAX_NESTED_DEPENDS" ] || die "Too many nested dependencies"
-                    pkg_build_depedencies "$dep_path" "" "$((level+1))"
+                    pkg_build_dependencies "$dep_path" "" "$((level+1))"
                     pkg_build_single "$dep_pkg" "$dep_path"
                 fi
                 pkg_install "$dep_pkg" "$dep_path"
@@ -433,7 +433,7 @@ pkg_build_depedencies() {
 }
 
 pkg_build() {
-    pkg_build_depedencies "$2"
+    pkg_build_dependencies "$2"
     pkg_build_single "$1" "$2"
 }
 
@@ -479,7 +479,7 @@ pkg_install() {
     info "installing $1"
 
     # ensure non-make dependencies are built
-    pkg_build_depedencies "$2" make
+    pkg_build_dependencies "$2" make
     if ! pkg_is_built "$1" "$2" >/dev/null; then
         pkg_build "$1" "$2"
     fi
