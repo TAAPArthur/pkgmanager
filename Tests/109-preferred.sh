@@ -58,3 +58,12 @@ $PKG_CMD r B
 
 $PKG_CMD i A
 validate A
+
+$PKG_CMD r A C
+[ ! -e "$PKGMAN_ROOT/file" ]
+
+$PKG_CMD i A C
+validate A
+
+$PKG_CMD i B
+validate B
