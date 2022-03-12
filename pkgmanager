@@ -381,7 +381,9 @@ pkg_build_helper() {
     [ -r "$path/build" ] && [ ! -x "$path/build" ] && die "$path/build exists but isn't executable"
     # actually build
     # shellcheck disable=2086
-    [ -r "$path/build" ] && "$path/build" "$DEST_DIR" $raw_version
+    if [ -r "$path/build" ] ; then
+        "$path/build" "$DEST_DIR" $raw_version || die "Exit $? in $path/build"
+    fi
     METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     mkdir -p "$METADATA_DIR"
     cp -RP "$path"/* "$METADATA_DIR"
