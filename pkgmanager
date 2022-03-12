@@ -505,6 +505,9 @@ pkg_remove_helper() {
             rm -f "$PKGMAN_ROOT/$file"
         fi
     done
+
+    # shellcheck disable=2115
+    rm -Rf "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
     run_hook post-remove "$pkg"
 }
 
