@@ -500,13 +500,13 @@ pkg_remove_helper() {
     pkg=$1
     MANIEFST="$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
     run_hook pre-remove "$pkg"
-    sort -r "$MANIEFST" | while read -r file; do
+    while read -r file; do
         if [ -d "$PKGMAN_ROOT/$file" ]; then
             rmdir "$PKGMAN_ROOT/$file" 2>/dev/null || true
         else
             rm -f "$PKGMAN_ROOT/$file"
         fi
-    done
+    done < "$MANIEFST"
 
     # shellcheck disable=2115
     rm -Rf "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
