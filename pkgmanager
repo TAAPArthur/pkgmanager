@@ -404,7 +404,7 @@ pkg_build_single() {
     path=$2
     info "building $pkg"
     if [ "$(whoami)" != root ]; then
-        ( pkg_build_helper "$pkg" "$path" )
+        "$0" _pkg_build_helper "$pkg" "$path"
     else
         echo "$0" _pkg_build_helper "$pkg" "$path" | {
             if [ "$USER" = root ]; then
