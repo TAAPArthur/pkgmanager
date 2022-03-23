@@ -44,11 +44,11 @@ info() {
 
 decompress() {
     case $1 in
-        *.tbz|*.bz2) bzip2 -d ;;
-        *.lzma)      lzma -dc ;;
+        *.bz2|*.tbz) bzip2 -d ;;
+        *.gz|*.tgz)  gzip -d  ;;
         *.lz)        lzip -dc ;;
+        *.lzma)      lzma -dc ;;
         *.tar)       cat      ;;
-        *.tgz|*.gz)  gzip -d  ;;
         *.xz|*.txz)  xz -dc ;;
         *.zst)       zstd -dc ;;
     esac < "$1"
@@ -96,7 +96,7 @@ extract() {
     _destdir=$2
     [ -n "$_fullpath" ] && [ -n "$_destdir" ]
     case $_fullpath in
-        *.tar|*.tar.*)
+        *.tbz|*.bz2|*.lzma|*.lz|*.tar|*.tgz|*.gz|*.xz|*.txz|*.zst)
             decompress "$_fullpath" | tar -xf - -C "$_destdir"
         ;;
         *.zip)
