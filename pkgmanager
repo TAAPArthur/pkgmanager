@@ -180,7 +180,7 @@ pkg_get_built() {
 
 # Returns success if packages is installed
 pkg_is_installed() {
-    [ -d "$PKGMAN_METADATA_INSTALL_DIR/$1" ]
+    [ -f "$PKGMAN_METADATA_INSTALL_DIR/$1/version" ]
 }
 
 # Outputs the version of the installed package if package is installed
@@ -529,9 +529,9 @@ pkg_remove() {
 pkg_list_installed() {
     [ $# -eq 0 ] && set -- "$PKGMAN_METADATA_INSTALL_DIR/"*
     for path ; do
-        if [ -d "$path" ]; then
+        if [ -d "$path" ] && [ -r "$path/version" ]; then
             pkg=${path#"$PKGMAN_METADATA_INSTALL_DIR/"}
-            read -r v r < "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version"
+            read -r v r < "$path/version"
             printf "%s\t%s\n" "$pkg" "$v $r"
         fi
     done
