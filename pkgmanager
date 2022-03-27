@@ -664,12 +664,11 @@ action_outdated() {
 }
 
 action_fetch() {
-    for_each_in_path "$PKGMAN_PATH" ".git" | while read -r path; do
-        (
-            cd "$path/.."
-            git pull --rebase
-
-        ) || die "Failed to pull $path"
+    for_each_in_path "$PKGMAN_PATH" | while read -r path; do
+        ( cd "$path" && git rev-parse --show-toplevel)
+    done | sort -u | while read -r path; do
+            cd "$path"
+            git pull --rebase || die "Failed to pull $path"
     done
 }
 
