@@ -233,7 +233,7 @@ pkg_search() {
         for pkg in "$path"/*; do
             [ -d "$pkg" ] && echo "$pkg"
         done
-    done | grep "$target"
+    done | grep "/$target\$"
 }
 
 _pkg_find_nested_deps() {
