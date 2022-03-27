@@ -248,21 +248,18 @@ _pkg_find_nested_deps() {
         done
     fi
     [ -r "$path/depends" ] || return 0
+
     while read -r depend label; do
         [ "#${depend#"#"}" = "$depend" ] && continue
         [ -z "$depend" ] && continue
-        if [ -r "$PKGMAN_DEPEND_MAP_FILE" ]; then
-            if temp=$(grep "^$depend\t" "$PKGMAN_DEPEND_MAP_FILE"); then
-                depend="$(echo "$temp" | { read -r _ d; echo "$d"; })"
-                [ -z "$depend" ] && continue
-            fi
-        fi
         printf "%s\t%s\n" "$depend" "$label"
         if [ "$max_level" -ne "$level" ]; then
             dep_path=$(pkg_find "$depend")
             _pkg_find_nested_deps "$dep_path" "$max_level" "$((level+1))"
         fi
-    done <"$1/depends"
+    done <<EOF
+$(if [ -r "$PKGMAN_DEPEND_MAP_FILE" ]; then sed -f "$PKGMAN_DEPEND_MAP_FILE" "$1/depends"; else cat "$1/depends"; fi)
+EOF
 }
 
 pkg_find_nested_deps() {
@@ -389,6 +386,9 @@ pkg_build_helper() {
     cp -RP "$path"/* "$METADATA_DIR"
 
     cd "$DEST_DIR"
+    if [ -r "$PKGMAN_DEPEND_MAP_FILE" ] && [ -e "$METADATA_DIR/depends" ]; then
+        sed -f "$PKGMAN_DEPEND_MAP_FILE" "$path/depends" > "$METADATA_DIR/depends"
+    fi
     run_hook post-build "$pkg"
 
     # todo hooks
@@ -619,7 +619,7 @@ action_depends () {
     for pkg do
         _set_pkg_path
         if pkg_is_installed "$pkg"; then
-            pkg_find_deps "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
+            PKGMAN_DEPEND_MAP_FILE="" pkg_find_deps "$PKGMAN_METADATA_INSTALL_DIR/$pkg"
         else
             pkg_find_deps "$path"
         fi
