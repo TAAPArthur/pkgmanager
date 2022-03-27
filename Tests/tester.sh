@@ -55,13 +55,14 @@ for test_file in Tests/"$1"*-*.sh; do
         mkdir -p "$PKGMAN_ROOT"
 
         printf "%s..." "${f#"$OLDPWD/"}"
-        if ! ( run_test "$f" ) > test.out 2>&1; then
+        if ( run_test "$f" ) > test.out 2>&1; then
+            echo passed
+        else
+            err=$?
             echo failed
             cat test.out
             echo "$f failed"
-            exit 1
-        else
-            echo passed
+            exit "$err"
         fi
     )
     rm -rf "$WORKING_DIR"
