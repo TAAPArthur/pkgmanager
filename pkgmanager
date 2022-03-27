@@ -191,7 +191,7 @@ pkg_get_installed_version() {
 
 # Outputs a manifest file for the given directory
 pkg_gen_manifest() {
-    _dir=$1
+    _dir=${1:-"$PWD"}
     find "$_dir" | sed -e "s:$_dir::" -e '/^$/d' | sort
 }
 

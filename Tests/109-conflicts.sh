@@ -9,6 +9,8 @@ echo 'touch "$1/file"' | tee A/build B/build C/build >/dev/null
 $PKG_CMD b A B C
 
 $PKG_CMD i B A C
+[ -e "$PKGMAN_ROOT/file" ]
+[ "$($PKG_CMD owns "/file")" = B ]
 
 $PKG_CMD manifest A C | grep "^/file" && exit 1
 $PKG_CMD manifest B | grep "^/file"

@@ -6,6 +6,16 @@ trap "rm -rf $WORKING_DIR" EXIT
 export PKG_CMD=pkgmanager
 export PKGMAN_PATH="$WORKING_DIR"
 
+timeout() {
+    # timeout isn't a standard util, do just run the command
+    # normally without it
+    if cmd="$(which timeout)" ; then
+        $cmd "$@"
+    else
+        shift
+        "$@"
+    fi
+}
 
 PATH=$PWD:$PATH
 
