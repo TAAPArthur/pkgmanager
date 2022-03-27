@@ -5,7 +5,7 @@
 
 long_help() {
     case "$1" in
-        list-ext |outdated)
+        list-ext |outdated | version)
             echo"Takes no arguments"
             return
             ;;
@@ -37,6 +37,7 @@ short_help() {
     revdepends       --  List all installed packages that depend on current package
     search           --  Search for package by regex
     tree             --  List all depedencies of package (as opposed to immediate)
+    version          --  Display installed version
 EOF
     pkgmanager list-ext | while read -r pkg full_path; do
         printf "    %-016s --  %s\n"    "${pkg#pkgmanager-}" "$(sed -n "2s/^#\s*//p" "$full_path")"

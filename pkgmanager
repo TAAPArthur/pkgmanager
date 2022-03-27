@@ -757,5 +757,6 @@ case "$action" in
     r|remove)                 action_remove "$@";;
     s|search)                 action_search "$@";;
     t|tree)                   action_tree "$@";;
+    v|ver*)                   echo "pkgmanager v0.9";;
     *)                        action_ext "$action" "$@" ;;
 esac
