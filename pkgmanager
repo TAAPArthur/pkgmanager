@@ -540,7 +540,8 @@ pkg_list_installed() {
 # Prints packages that whose installed version differs from repo
 pkg_determine_out_of_date() {
     pkg_list_installed | while read -r pkg v r; do
-        if [ "${v}_${r}" != "$(pkg_read_full_version "$pkg")" ]; then
+        path=$(pkg_find "$pkg")
+        if [ "${v}_${r}" != "$(pkg_read_full_version "$path")" ]; then
             echo "$pkg"
         fi
     done
