@@ -2,7 +2,7 @@
 
 pkg=$1
 version=$2
-IFS=.+-_ read -r repo_major repo_minor _<<EOF
+IFS=.+-_ read -r repo_major repo_minor repo_patch _<<EOF
 $version
 EOF
-sed "s/ARCH/$(uname -m)/g; s/VERSION/$version/g; s/PACKAGE/$pkg/g; s/MAJOR/$repo_major/g; s/MINOR/$repo_minor/g"
+sed "s/ARCH/$(uname -m)/g; s/VERSION/$version/g; s/PACKAGE/$pkg/g; s/MAJOR/$repo_major/g; s/MINOR/$repo_minor/g; s/PATCH/$repo_patch/g"
