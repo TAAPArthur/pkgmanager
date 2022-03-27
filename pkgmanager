@@ -669,7 +669,7 @@ action_fetch() {
         ( cd "$path" && git rev-parse --show-toplevel)
     done | sort -u | while read -r path; do
             cd "$path"
-            git pull --rebase || die "Failed to pull $path"
+            git pull --rebase || true
     done
 }
 
