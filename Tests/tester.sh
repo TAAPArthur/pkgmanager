@@ -45,7 +45,8 @@ run_test() {
     . "$1"
 }
 for test_file in Tests/"$1"*-*.sh; do
-    mkdir -p "$WORKING_DIR"
+    export TMPDIR="$WORKING_DIR/tempdir"
+    mkdir -p "$WORKING_DIR" "$TMPDIR"
     (
         f="$PWD/$test_file"
         cd "$WORKING_DIR"
@@ -65,5 +66,6 @@ for test_file in Tests/"$1"*-*.sh; do
             exit "$err"
         fi
     )
+    rmdir "$TMPDIR"
     rm -rf "$WORKING_DIR"
 done
