@@ -577,7 +577,7 @@ action_find() {
 action_search() {
     [ $# -ne 0 ] || set -- "$(get_default_pkg)"
     for pattern do
-        pkg_search "$pattern"
+        pkg_search "$(basename "$pattern")"
     done
 }
 
