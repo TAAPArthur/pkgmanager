@@ -1,5 +1,6 @@
 #!/bin/sh -e
 
+export PKGMAN_FORCE=1
 $PKG_CMD update
 
 $PKG_CMD new A

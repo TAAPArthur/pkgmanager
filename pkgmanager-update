@@ -9,9 +9,12 @@ set -- $(pkgmanager outdated)
 [ $# -eq 0 ] && exit 0
 
 echo "Updating $*... continue Y/n"
-read -r response
-if [ "$response" != y ] && [ "$response" != Y ]; then
-    exit 1
+if [ "${PKGMAN_FORCE:-0}" -eq 0 ]; then
+    read -r response
+
+    if [ "$response" != y ] && [ "$response" != Y ]; then
+        exit 1
+    fi
 fi
 
 for pkg do
