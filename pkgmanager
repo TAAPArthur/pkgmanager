@@ -368,6 +368,8 @@ pkg_build_helper() {
     DEST_DIR="$WORKING_DIR/dest_dir"
     BUILD_DIR="$WORKING_DIR/build_dir"
     mkdir -p "$DEST_DIR"
+    mkdir -p "$BUILD_DIR"
+
     # Run in subshell to ensure validity of local variables
     ( pkg_extract_sources "$pkg" "$path" "$BUILD_DIR" )
 
