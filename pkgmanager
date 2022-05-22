@@ -27,6 +27,8 @@ PKGMAN_DEPEND_MAP_FILE=${PKGMAN_DEPEND_MAP_FILE:-"/$PKGMAN_METADATA_BASE_DIR/ali
 PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME/hooks.d}"
 PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
+PKGMAN_LOG_FILE=${PKGMAN_LOG_FILE:-"/var/log/pkgmanager.log"}
+PKGMAN_LOG_SYS=${PKGMAN_LOG_SYS:-1}
 
 ############## General helpers
 # These methods may read global variables and all their local variables should
@@ -40,6 +42,12 @@ die() {
 
 info() {
     echo "$@" >&2
+}
+
+log() {
+    echo "$*" >&2
+    echo "$*" >> "$PKGMAN_LOG_FILE"
+    [ "$PKGMAN_LOG_SYS" != "1" ] || echo "$PKGMAN_NAME: $*" | logger
 }
 
 decompress() {
@@ -125,7 +133,13 @@ run_hook(){
     for _hook in $(for_each_in_path "$PKGMAN_HOOK_PATH") ; do
         for _script in "$_hook/"*.sh; do
             if [ -r "$_script" ]; then
+                IFS=. read -r _hook_start _ < /proc/uptime
                 . "$_script"
+                IFS=. read -r _hook_end _ < /proc/uptime
+                delta=$((_hook_end - _hook_start))
+                if [ "$delta" -gt 2 ]; then
+                    log "Hook '$_script' took long time (${delta}s) for '$PKG' for action '$TYPE'"
+                fi
             fi
         done
     done
@@ -407,7 +421,7 @@ pkg_build_helper() {
 pkg_build_single() {
     pkg=$1
     path=$2
-    info "building $pkg"
+    log "building $pkg"
     if [ "$(whoami)" != root ]; then
         "$0" _pkg_build_helper "$pkg" "$path"
     else
@@ -419,7 +433,7 @@ pkg_build_single() {
             fi
         }
     fi || die "Failed to build $pkg"
-    info "built $pkg"
+    log "built $pkg"
 }
 
 pkg_build_dependencies() {
@@ -492,7 +506,7 @@ pkg_install_helper() {
 
 # Installs (or reinstalls) a package
 pkg_install() {
-    info "installing $1"
+    log "installing $1"
 
     # ensure non-make dependencies are built
     pkg_build_dependencies "$2" make
@@ -506,7 +520,7 @@ pkg_install() {
     mkdir -p "$PKGMAN_METADATA_INSTALL_DIR"
     _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_install_helper "$pkg" "$archive" || die "Failed to install $pkg"
 
-    info "installed $pkg"
+    log "installed $pkg"
 }
 
 pkg_remove_helper() {
@@ -531,10 +545,10 @@ pkg_remove() {
     pkg=$1
     [ -d "$PKGMAN_METADATA_INSTALL_DIR/$pkg" ] || die "Package not installed"
 
-    info "Removing $pkg"
+    log "Removing $pkg"
     _PKGMAN_HAS_METADATA_LOCK=1 flock "$PKGMAN_METADATA_LOCK_FILE" "$0" _pkg_remove_helper "$pkg" || die "Failed to remove $pkg"
 
-    info "Removed $pkg"
+    log "Removed $pkg"
 
 }
 
