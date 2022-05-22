@@ -308,6 +308,8 @@ pkg_extract_sources() {
     [ -d "$path" ]
     version=$(pkg_read_version "$path")
 
+    run_hook pre-extract "$pkg"
+
     # Download in subshell to avoid risk of method modifing our
     # local vars
     (
@@ -351,6 +353,7 @@ pkg_extract_sources() {
             cp "$path/$rpath" "$dest/$dirname"
         fi
     done
+    run_hook post-extract "$pkg"
 }
 
 pkg_build_helper() {

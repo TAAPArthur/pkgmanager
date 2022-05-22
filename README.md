@@ -109,11 +109,13 @@ Each hook is sourced. The `$1` will contain the type and `$2` the package. These
 | Hook          | PWD             |
 | ------------- | --------------- |
 | post-build    | DESTDIR         |
+| post-extract  | BUILD_DIR       |
 | post-install  | PKG_METADATA_DIR|
 | post-remove   | PKG_METADATA_DIR|
 | pre-build     | BUILD_DIR       |
-| pre-remove    | PKG_METADATA_DIR|
+| pre-extract   | BUILD_DIR       |
 | pre-install   | DESTDIR         |
+| pre-remove    | PKG_METADATA_DIR|
 
 # Tests
 There's a simple test suite to guard against regressions.

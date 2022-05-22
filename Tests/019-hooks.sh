@@ -6,9 +6,11 @@ cat >>hooks.d/hook.sh <<"EOF"
 touch $PKGMAN_ROOT/$TYPE
 case "$TYPE" in
     post-build  ) [ "$p_build" -eq 1 ];;
+    post-extract ) [ "$p_extract" -eq 1 ];;
     post-install)  [ "$p_install" -eq 1 ];;
     post-remove )  [ "$p_remove" -eq 1 ];;
     pre-build   ) p_build=1;;
+    pre-extract )  p_extract=1;;
     pre-install )  p_install=1;;
     pre-remove  )  p_remove=1;;
     *) exit 100;;
