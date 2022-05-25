@@ -9,7 +9,7 @@ $PKG_CMD list A | grep "1 1"
 
 export PKGMAN_HOOK_PATH="$PWD/hooks"
 mkdir hooks
-cat - >>hooks/fail_post_install_hook.sh <<"EOF"
+cat - >>hooks/999-fail_post_install_hook.sh <<"EOF"
 case "$TYPE" in
     post-install)
         exit 1

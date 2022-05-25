@@ -476,8 +476,9 @@ pkg_install_helper() {
 
     PREVIOUS_MANIFEST=$WORKING_DIR/manifest
     PREVIOUS_VERSION=$WORKING_DIR/version
+
     cp "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version" "$PREVIOUS_VERSION" 2>/dev/null || true
-    cp "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" "$PREVIOUS_MANIFEST" 2>/dev/null || true
+    [ -e "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" ] && sort "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" > "$PREVIOUS_MANIFEST"
 
     # Use subshell to not override trap
     (
