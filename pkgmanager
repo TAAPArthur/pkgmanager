@@ -25,6 +25,7 @@ PKGMAN_UNPRIVILEGED_USER="${PKGMAN_UNPRIVILEGED_USER:-nobody}"
 
 PKGMAN_DEPEND_MAP_FILE=${PKGMAN_DEPEND_MAP_FILE:-"/$PKGMAN_METADATA_BASE_DIR/aliases"}
 PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME/hooks.d}"
+PKGMAN_SKIP_HOOKS="${PKGMAN_SKIP_HOOKS:-0}"
 PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
 PKGMAN_LOG_FILE=${PKGMAN_LOG_FILE:-"/var/log/pkgmanager.log"}
@@ -127,6 +128,7 @@ for_each_in_path() {
 }
 
 run_hook(){
+    [ "$PKGMAN_SKIP_HOOKS" -eq 0 ] || return
     export TYPE="$1"
     export PKG="$2"
     info "Running hook '$TYPE'"
