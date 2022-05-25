@@ -28,7 +28,6 @@ PKGMAN_HOOK_PATH="${PKGMAN_HOOK_PATH:-/etc/$PKGMAN_NAME/hooks.d}"
 PKGMAN_SKIP_HOOKS="${PKGMAN_SKIP_HOOKS:-0}"
 PKGMAN_SOURCE_FIX_FILE=${PKGMAN_SOURCE_FIX_FILE:-"/etc/$PKGMAN_NAME/source_fix"}
 
-PKGMAN_LOG_FILE=${PKGMAN_LOG_FILE:-"/var/log/pkgmanager.log"}
 PKGMAN_LOG_SYS=${PKGMAN_LOG_SYS:-1}
 
 ############## General helpers
@@ -47,7 +46,6 @@ info() {
 
 log() {
     echo "$*" >&2
-    echo "$*" >> "$PKGMAN_LOG_FILE"
     [ "$PKGMAN_LOG_SYS" != "1" ] || echo "$PKGMAN_NAME: $*" | logger
 }
 
