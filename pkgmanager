@@ -474,7 +474,7 @@ pkg_install_helper() {
 
     extract "$archive" "$EXTRACTION_DIR"
 
-    PREVIOUS_MANIFEST=$WORKING_DIR/current_manifest
+    PREVIOUS_MANIFEST=$WORKING_DIR/manifest
     PREVIOUS_VERSION=$WORKING_DIR/version
     cp "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version" "$PREVIOUS_VERSION" 2>/dev/null || true
     cp "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest" "$PREVIOUS_MANIFEST" 2>/dev/null || true
@@ -484,7 +484,7 @@ pkg_install_helper() {
     cd "$EXTRACTION_DIR"
     run_hook pre-install "$pkg" "$PREVIOUS_MANIFEST"
 
-    trap 'mv $PREVIOUS_VERSION "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version" || rm "$PKGMAN_METADATA_INSTALL_DIR/$pkg/version"' EXIT
+    trap 'mv $PREVIOUS_MANIFEST $PREVIOUS_VERSION "$PKGMAN_METADATA_INSTALL_DIR/$pkg/" || rm -r "$PKGMAN_METADATA_INSTALL_DIR/$pkg"' EXIT
 
     cp -RPf "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
     # Update manifest because hooks may have changed it
