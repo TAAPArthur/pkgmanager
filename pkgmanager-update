@@ -1,10 +1,18 @@
 #!/bin/sh -e
 # Fetches any updates from repositories and builds/installs updates
-# Takes no arguments
+# [git]
+# If git is run, then all git packages (and only them) will be rebuilt and installed
 
 pkgmanager fetch
+
+BUILD=0
 # shellcheck disable=2046
-set -- $(pkgmanager outdated)
+if [ "$1" = "git" ]; then
+    BUILD=1
+    set -- $(pkgmanager list | grep "\sgit\s")
+else
+    set -- $(pkgmanager outdated)
+fi
 
 [ $# -eq 0 ] && exit 0
 
@@ -18,6 +26,6 @@ if [ "${PKGMAN_FORCE:-0}" -eq 0 ]; then
 fi
 
 for pkg do
-    pkgmanager build "$pkg"
+    [ "$BUILD" -eq 0 ] || pkgmanager build "$pkg"
     pkgmanager install "$pkg"
 done
