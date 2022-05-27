@@ -348,7 +348,7 @@ pkg_extract_sources() {
 
         extract "$fullpath" "$tmp"
         # shellcheck disable=2144
-        if [ -d "$tmp"/* ]; then
+        if [ -d "$tmp"/* ] 2>/dev/null; then
             for file in "$tmp"/*/* "$tmp"/*/.[!.]*; do
                 { [ -e "$file" ] || [ -h "$file" ]; } && mv "$file" "$dest/$dirname"
             done
