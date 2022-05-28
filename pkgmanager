@@ -235,8 +235,7 @@ pkg_find() {
     target=$1
     search_path="$PKGMAN_PATH"
     [ "${PKGMANAGER_HIDE_INSTALL_DIR:-0}" -eq 1 ] || search_path=$search_path:$PKGMAN_METADATA_INSTALL_DIR
-    path="$(for_each_in_path "$search_path" "$target" | { read -r path; echo "$path"; })"
-    [ -n "$path" ] || return 1
+    path="$(for_each_in_path "$search_path" "$target" | { read -r path; echo "$path"; })" || { log "Could not find $1" ; return 1; }
     echo "$path"
 }
 
