@@ -710,6 +710,10 @@ action_remove() {
     # shellcheck disable=2046
     set -- $(pkg_get_build_order "$@" | nl | sort -nr | cut -f2-)
     for pkg do
+        if ! pkg_is_installed "$pkg"; then
+            log "Skipping removal of $pkg because it isn't installed"
+            continue
+        fi
         (
         if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -q -v -e "make" -e "\S*__" ; then
             die "$pkg has dependents"
