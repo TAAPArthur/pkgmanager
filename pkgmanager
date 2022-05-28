@@ -581,12 +581,10 @@ pkg_revdepends() {
     grep -lEs -- "^$1(\s|\$)" "$PKGMAN_METADATA_INSTALL_DIR/"*/depends | while read -r file; do
         relative_path=${file#"$PKGMAN_METADATA_INSTALL_DIR/"}
         pkg=${relative_path%"/depends"}
-        if [ "${pkg#"__"}" = "$pkg" ]; then
-            grep -E "^$1( |\$)" "$file" | {
-                read -r _ label
-                printf "%s\t%s\n" "$pkg" "$label"
-            }
-        fi
+        grep -E "^$1( |\$)" "$file" | {
+            read -r _ label
+            printf "%s\t%s\n" "$pkg" "$label"
+        }
     done
 }
 
@@ -712,7 +710,7 @@ action_remove() {
     [ $# -ne 0 ] || set -- "$(get_default_pkg)"
     for pkg do
         (
-        if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -q -v "make"; then
+        if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -q -v -e "make" -e "\S*__" ; then
             die "$pkg has dependents"
         fi
         )

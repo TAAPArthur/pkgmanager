@@ -8,6 +8,5 @@ $PKG_CMD b __numbers__
 $PKG_CMD i __numbers__
 
 $PKG_CMD revdepends 12
-[ 0"$($PKG_CMD revdepends 12)" -eq 0 ]
 $PKG_CMD r 12
 

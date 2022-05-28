@@ -23,3 +23,10 @@ $PKG_CMD b 3
 $PKG_CMD i 3
 $PKG_CMD orphans | grep 3
 $PKG_CMD orphans | grep 4
+
+$PKG_CMD new __meta__ 1
+printf "3\n4\n" > __meta__/depends
+
+$PKG_CMD b __meta__
+$PKG_CMD i __meta__
+[ "$($PKG_CMD orphans)" = __meta__ ]
