@@ -4,7 +4,13 @@
 
 METADATA=$(pkgmanager get-metadata-install-dir)
 
-for filepath do
-    manifest=$(grep -slFx "$filepath" "$METADATA/"*/manifest | { read -r m; echo "$m"; })
-    [ -n "$manifest" ] && basename "$(dirname "$manifest")"
-done
+if [ "$1" != "-" ]; then
+    for filepath do
+        manifest=$(grep -slFx "$filepath" "$METADATA/"*/manifest | { read -r m; echo "$m"; })
+        [ -n "$manifest" ] && basename "$(dirname "$manifest")"
+    done
+else
+    grep -sHFx -e "$(cat -)" "$METADATA/"*/manifest | while IFS=: read -r manifest path; do
+        printf "%s\t%s\n" "$(basename "$(dirname "$manifest")")" "$path"
+    done
+fi
