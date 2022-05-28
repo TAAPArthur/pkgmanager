@@ -707,6 +707,8 @@ action_revdepends() {
 
 action_remove() {
     [ $# -ne 0 ] || set -- "$(get_default_pkg)"
+    # shellcheck disable=2046
+    set -- $(pkg_get_build_order "$@" | nl | sort -nr | cut -f2-)
     for pkg do
         (
         if [ "$PKGMAN_FORCE" -eq 0 ] && pkg_revdepends "$pkg" | grep -q -v -e "make" -e "\S*__" ; then
