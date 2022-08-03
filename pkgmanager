@@ -184,7 +184,12 @@ pgk_get_remote_head_hash() {
     }
 }
 
+pgk_get_git_version_string() {
+    printf "git:%s"  "$1"
+}
+
 pgk_get_remote_version() {
+    printf "git:"
     pgk_get_remote_head_hash "$1"
 }
 
@@ -196,7 +201,7 @@ get_built_file_name() {
     _pkg=$1
     _path=$2
     _version=${3:-$(pkg_read_compact_version "$_path")}
-    is_git_version "$_version" && _version="$(pgk_get_remote_version "$_path")_${_version#git_}"
+    is_git_version "$_version" && _version="$(pgk_get_remote_version "$_path")_${_version#*_}"
     echo "$PKGMAN_BUILD_CACHE_DIR/${_pkg}_${_version}.tar"
 }
 
@@ -414,6 +419,11 @@ pkg_build_helper() {
     run_hook pre-build "$pkg"
 
     [ -r "$path/build" ] && [ ! -x "$path/build" ] && die "$path/build exists but isn't executable"
+
+    if is_git_version "$raw_version"; then
+        hash=$(git rev-parse HEAD)
+    fi
+
     # actually build
     # shellcheck disable=2086
     if [ -r "$path/build" ] ; then
@@ -424,7 +434,7 @@ pkg_build_helper() {
     cp -RP "$path"/* "$METADATA_DIR"
 
     if is_git_version "$raw_version"; then
-        echo "$(pgk_get_remote_version "$METADATA_DIR") ${raw_version#git }" > "$METADATA_DIR"/version
+        echo "$(pgk_get_git_version_string "$hash") ${raw_version#git }" > "$METADATA_DIR"/version
     fi
 
     cd "$DEST_DIR"
@@ -593,7 +603,8 @@ pkg_determine_out_of_date() {
     pkg_list_installed | while read -r pkg v r; do
         path=$(pkg_find "$pkg")
         if [ "$v $r" != "$(pkg_read_raw_version "$path")" ]; then
-            if [ "$1" = git ] && is_git_version "$v"; then
+            if is_git_version "$v"; then
+                [ "$1" = git ] || continue
                 [ "$(pgk_get_remote_version "$path")" = "$v" ] && continue
             fi
             echo "$pkg"
