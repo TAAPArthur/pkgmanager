@@ -5,14 +5,8 @@
 
 pkgmanager fetch
 
-BUILD=0
 # shellcheck disable=2046
-if [ "$1" = "git" ]; then
-    BUILD=1
-    set -- $(pkgmanager list | grep "\sgit\s")
-else
-    set -- $(pkgmanager outdated)
-fi
+set -- $(pkgmanager outdated "$1")
 
 [ $# -eq 0 ] && exit 0
 
@@ -26,6 +20,5 @@ if [ "${PKGMAN_FORCE:-0}" -eq 0 ]; then
 fi
 
 for pkg do
-    [ "$BUILD" -eq 0 ] || pkgmanager build "$pkg"
     pkgmanager install "$pkg"
 done

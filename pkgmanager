@@ -158,13 +158,13 @@ pkg_read_version() {
     if [ "$_full_version" -eq 0 ]; then
         echo "$_v"
     elif [ "$_full_version" -eq 1 ]; then
-        echo "${_v}_$_r"
+        echo "${_v}_${_r}"
     else
         echo "$_v $_r"
     fi
 }
 
-pkg_read_full_version() {
+pkg_read_compact_version() {
     pkg_read_version "$1" 1
 }
 
@@ -177,19 +177,40 @@ pkg_read_sources() {
     [ -e "$1/sources" ] && sed '/^#/d; /^$/d' "$1/sources"
 }
 
+pgk_get_remote_head_hash() {
+    pkg_read_sources "$1" | grep "^git+" | {
+        read -r rpath _
+        git ls-remote "${rpath#git+}" HEAD | cut -f1
+    }
+}
+
+pgk_get_remote_version() {
+    pgk_get_remote_head_hash "$1"
+}
+
+is_git_version() {
+    [ "${1#git}" != "$1" ]
+}
+
+get_built_file_name() {
+    _pkg=$1
+    _path=$2
+    _version=${3:-$(pkg_read_compact_version "$_path")}
+    is_git_version "$_version" && _version="$(pgk_get_remote_version "$_path")_${_version#git_}"
+    echo "$PKGMAN_BUILD_CACHE_DIR/${_pkg}_${_version}.tar"
+}
+
 # Outputs the built tar; fails if package isn't built
 pkg_is_built() {
     _pkg=$1
     _path=$2
-    _v="$(pkg_read_full_version "$_path")"
-    _archive="$PKGMAN_BUILD_CACHE_DIR/${_pkg}_${_v}.tar"
-    [ -e "$_archive" ] || return 2
-    echo "$_archive"
+    [ -e "$(get_built_file_name "$@")" ]
 }
 
 # Outputs the built tar; exits if package isn't built
 pkg_get_built() {
     pkg_is_built "$1" "$2" || die "Package not built"
+    get_built_file_name "$1" "$2"
 }
 
 # Returns success if packages is installed
@@ -387,7 +408,6 @@ pkg_build_helper() {
     ( pkg_extract_sources "$pkg" "$path" "$BUILD_DIR" )
 
     raw_version=$(pkg_read_raw_version "$path" )
-    version="$(pkg_read_full_version "$path")"
 
     cd "$BUILD_DIR"
 
@@ -403,6 +423,10 @@ pkg_build_helper() {
     mkdir -p "$METADATA_DIR"
     cp -RP "$path"/* "$METADATA_DIR"
 
+    if is_git_version "$raw_version"; then
+        echo "$(pgk_get_remote_version "$METADATA_DIR") ${raw_version#git }" > "$METADATA_DIR"/version
+    fi
+
     cd "$DEST_DIR"
     if [ -r "$PKGMAN_DEPEND_MAP_FILE" ] && [ -e "$METADATA_DIR/depends" ]; then
         sed -f "$PKGMAN_DEPEND_MAP_FILE" "$path/depends" > "$METADATA_DIR/depends"
@@ -411,7 +435,8 @@ pkg_build_helper() {
 
     # todo hooks
     pkg_gen_manifest "$DEST_DIR" > "$METADATA_DIR/manifest"
-    BUILD_CACHE="$PKGMAN_BUILD_CACHE_DIR/${pkg}_${version}.tar"
+
+    BUILD_CACHE=$(get_built_file_name "$pkg" "$METADATA_DIR")
     info "Saving build to $BUILD_CACHE"
     tar -c -C "$DEST_DIR" . > "$BUILD_CACHE.tmp"
     mv "$BUILD_CACHE.tmp" "$BUILD_CACHE"
@@ -443,7 +468,7 @@ pkg_build_dependencies() {
         while read -r dep_pkg _; do
             if ! pkg_is_installed "$dep_pkg"; then
                 dep_path="$(pkg_find "$dep_pkg")"
-                if ! pkg_is_built "$dep_pkg" "$dep_path" >/dev/null; then
+                if ! pkg_is_built "$dep_pkg" "$dep_path"; then
                     [ "$level" -ne "$PKGMAN_MAX_NESTED_DEPENDS" ] || die "Too many nested dependencies"
                     pkg_build_dependencies "$dep_path" "" "$((level+1))"
                     pkg_build_single "$dep_pkg" "$dep_path"
@@ -510,7 +535,7 @@ pkg_install() {
 
     # ensure non-make dependencies are built
     pkg_build_dependencies "$2" make
-    if ! pkg_is_built "$1" "$2" >/dev/null; then
+    if ! pkg_is_built "$1" "$2"; then
         pkg_build "$1" "$2"
     fi
     pkg=$1
@@ -558,8 +583,7 @@ pkg_list_installed() {
     for path ; do
         if [ -d "$path" ] && [ -r "$path/version" ]; then
             pkg=${path#"$PKGMAN_METADATA_INSTALL_DIR/"}
-            read -r v r < "$path/version"
-            printf "%s\t%s\n" "$pkg" "$v $r"
+            printf "%s\t%s\n" "$pkg" "$(pkg_read_raw_version "$path")"
         fi
     done
 }
@@ -568,7 +592,10 @@ pkg_list_installed() {
 pkg_determine_out_of_date() {
     pkg_list_installed | while read -r pkg v r; do
         path=$(pkg_find "$pkg")
-        if [ "${v}_${r}" != "$(pkg_read_full_version "$path")" ]; then
+        if [ "$v $r" != "$(pkg_read_raw_version "$path")" ]; then
+            if [ "$1" = git ] && is_git_version "$v"; then
+                [ "$(pgk_get_remote_version "$path")" = "$v" ] && continue
+            fi
             echo "$pkg"
         fi
     done
@@ -667,7 +694,7 @@ action_export() {
     for pkg do
         _set_pkg_path
         (
-        if ! pkg_is_built "$pkg" "$path" >/dev/null; then
+        if ! pkg_is_built "$pkg" "$path"; then
             pkg_build "$pkg" "$path"
         fi
         )
@@ -686,7 +713,7 @@ action_install() {
 }
 
 action_outdated() {
-    pkg_determine_out_of_date | pkg_get_build_order
+    pkg_determine_out_of_date "$1" | pkg_get_build_order
 }
 
 action_fetch() {
