@@ -20,5 +20,5 @@ if [ "${PKGMAN_FORCE:-0}" -eq 0 ]; then
 fi
 
 for pkg do
-    pkgmanager install "$pkg"
+    pkgmanager install "$pkg" || [ "${PKGMAN_FORCE:-0}" -eq 1 ]
 done
