@@ -1,6 +1,11 @@
 #!/bin/sh -e
 # Shows outdated packages according to an external source
 
+interactive=0
+if [ "$1" = -i ]; then
+    interactive=1
+    shift
+fi
 REPO=${1:-$PWD}
 if [ "${REPO#/}" = "$REPO" ]; then
     REPO=$PWD/$REPO/
@@ -31,6 +36,19 @@ download_data() {
     done
     curl -s -Z --remote-name-all "$@"
 }
+
+update_versions() {
+    for v in $remote_ver; do
+        printf "Update %s to %s? Y/n " "$version" "$v"
+        read -r resp
+        if [ "$resp" = "y" ] || [ "$resp" = "Y" ] || [ "$resp" = "yes" ] || [ "$resp" = "Yes" ]; then
+            sed "s/$version/$v/g" "$dir"/version "$dir"/sources
+            sed -i "s/$version/$v/g" "$dir"/version "$dir"/sources
+            break
+        fi
+    done
+}
+
 download_data
 for dir in "$REPO"/*/; do
 
@@ -44,7 +62,11 @@ for dir in "$REPO"/*/; do
     remote_ver=${remote_ver%</text>*}
     remote_ver=${remote_ver##*>}
 
-    if [ -n "$remote_ver" ]; then
+    if [ -n "$remote_ver" ] && [ "$remote_ver" != - ]; then
         printf "%s %s -> %s\n" "$(basename "$dir")" "$version" "$remote_ver"
+        if [ "$interactive" -eq 1 ]; then
+            # shellcheck disable=2086
+            IFS=", " update_versions $remote_ver
+        fi
     fi
 done
