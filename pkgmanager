@@ -355,7 +355,7 @@ pkg_extract_sources() {
 
     # Handle git repo next since we can't clone into a non-empty dir
     pkg_read_sources "$path" | grep "^git+" | while read -r rpath dirname; do
-        git clone "${rpath#git+}" "$dest/$dirname"
+        git clone --single-branch "${rpath#git+}" "$dest/$dirname"
     done
 
     create_working_dir
