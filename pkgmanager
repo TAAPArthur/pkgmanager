@@ -519,7 +519,18 @@ pkg_install_helper() {
 
     trap 'mv $PREVIOUS_MANIFEST $PREVIOUS_VERSION "$PKGMAN_METADATA_INSTALL_DIR/$pkg/" || rm -r "$PKGMAN_METADATA_INSTALL_DIR/$pkg"' EXIT
 
-    cp -RPf "$EXTRACTION_DIR"/* "$PKGMAN_ROOT"
+    [ -w "$PKGMAN_ROOT" ]
+    cp -RPf "$EXTRACTION_DIR"/* "$PKGMAN_ROOT" || {
+        info "Failing back to manual copy"
+        find "$EXTRACTION_DIR" | while read -r file; do
+            dest="$PKGMAN_ROOT/${file#"${EXTRACTION_DIR}"}"
+            if [ -d "$file/" ]; then
+                mkdir -p "$dest"
+            else
+                cp -Pf "$file" "$dest"
+            fi
+        done
+    }
     # Update manifest because hooks may have changed it
     pkg_gen_manifest "$EXTRACTION_DIR" > "$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
 
