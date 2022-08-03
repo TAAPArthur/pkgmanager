@@ -1,0 +1,50 @@
+#!/bin/sh -e
+# Shows outdated packages according to an external source
+
+REPO=${1:-$PWD}
+if [ "${REPO#/}" = "$REPO" ]; then
+    REPO=$PWD/$REPO/
+fi
+
+PKGMAN_CACHE_DIR=${PKGMAN_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/pkgmanager}/upstream_versions
+mkdir -p "$PKGMAN_CACHE_DIR"
+
+get_pkg_name() {
+    pkg="$(basename "$1")"
+    if [ "${pkg#python-}" != "$pkg" ]; then
+        pkg="python:${pkg#python-}"
+    elif [ "${pkg#perl-}" != "$pkg" ]; then
+        pkg="perl:${pkg#perl-}"
+    elif [ "${pkg%-bin}" != "$pkg" ]; then
+        pkg="${pkg%-bin}"
+    fi
+    echo "$pkg"
+}
+
+download_data() {
+    cd "$PKGMAN_CACHE_DIR"
+    for dir in "$REPO"/*/; do
+        read -r version _ < "$dir/version"
+        [ "$version" = git ] && continue
+        pkg="$(get_pkg_name "$dir")"
+        set -- "$@" -z  "$pkg.svg" "https://repology.org/badge/latest-versions/$pkg.svg"
+    done
+    curl -s -Z --remote-name-all "$@"
+}
+download_data
+for dir in "$REPO"/*/; do
+
+    read -r version _ < "$dir/version"
+    [ "$version" = git ] && continue
+
+    pkg="$(get_pkg_name "$dir")"
+    grep -q "$version" "$PKGMAN_CACHE_DIR/$pkg.svg" && continue
+
+    read -r remote_ver < "$PKGMAN_CACHE_DIR/$pkg.svg" || true
+    remote_ver=${remote_ver%</text>*}
+    remote_ver=${remote_ver##*>}
+
+    if [ -n "$remote_ver" ]; then
+        printf "%s %s -> %s\n" "$(basename "$dir")" "$version" "$remote_ver"
+    fi
+done
