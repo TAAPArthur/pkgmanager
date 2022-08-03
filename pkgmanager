@@ -347,16 +347,18 @@ pkg_extract_sources() {
     [ -d "$path" ]
     version=$(pkg_read_version "$path")
 
+    mkdir -p "$dest"
+    cd "$dest"
     run_hook pre-extract "$pkg"
+    cd -
 
-    # Download in subshell to avoid risk of method modifing our
+    # Download in subshell to avoid risk of method modifying our
     # local vars
     (
     # Download sources first to verify we can download them
     pkg_download "$pkg" "$path" "$version" >/dev/null
     )
 
-    mkdir -p "$dest"
 
     # Handle git repo next since we can't clone into a non-empty dir
     pkg_read_sources "$path" | grep "^git+" | while read -r rpath dirname; do
@@ -392,7 +394,9 @@ pkg_extract_sources() {
             cp "$path/$rpath" "$dest/$dirname"
         fi
     done
+    cd "$dest"
     run_hook post-extract "$pkg"
+    cd -
 }
 
 pkg_build_helper() {
@@ -571,7 +575,8 @@ pkg_install() {
 
 pkg_remove_helper() {
     pkg=$1
-    MANIEFST="$PKGMAN_METADATA_INSTALL_DIR/$pkg/manifest"
+    cd "$PKGMAN_METADATA_INSTALL_DIR/$pkg/"
+    MANIEFST="manifest"
     run_hook pre-remove "$pkg"
     while read -r file; do
         if [ -d "$PKGMAN_ROOT/$file" ]; then
