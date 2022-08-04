@@ -118,6 +118,8 @@ Each hook is sourced. The `$1` will contain the type and `$2` the package. These
 | pre-install   | DESTDIR         |
 | pre-remove    | PKG_METADATA_DIR|
 
+In addition, the build hooks have access to `$METADATA_DIR` which contains a writable copy of the package info for the package in question. It could be used to dynamically modify the build script.
+
 # Tests
 There's a simple test suite to guard against regressions.
 `make test`

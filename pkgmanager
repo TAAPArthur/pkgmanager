@@ -425,24 +425,22 @@ pkg_build_helper() {
 
     cd "$BUILD_DIR"
 
-    run_hook pre-build "$pkg"
-
     [ -r "$path/build" ] && [ ! -x "$path/build" ] && die "$path/build exists but isn't executable"
 
-    if is_git_version "$raw_version"; then
-        hash=$(git rev-parse HEAD)
-    fi
-
-    # actually build
-    # shellcheck disable=2086
-    if [ -r "$path/build" ] ; then
-        "$path/build" "$DEST_DIR" $raw_version || die "Exit $? in $path/build"
-    fi
     METADATA_DIR="$DEST_DIR/$PKGMAN_METADATA_BASE_INSTALL_DIR/$pkg"
     mkdir -p "$METADATA_DIR"
     cp -RP "$path"/* "$METADATA_DIR"
 
+    run_hook pre-build "$pkg"
+
+    # actually build
+    # shellcheck disable=2086
+    if [ -r "$path/build" ] ; then
+        "$METADATA_DIR/build" "$DEST_DIR" $raw_version || die "Exit $? in $path/build"
+    fi
+
     if is_git_version "$raw_version"; then
+        hash=$(git rev-parse HEAD)
         echo "$(pgk_get_git_version_string "$hash") ${raw_version#git }" > "$METADATA_DIR"/version
     fi
 
