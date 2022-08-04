@@ -359,7 +359,6 @@ pkg_extract_sources() {
     mkdir -p "$dest"
     cd "$dest"
     run_hook pre-extract "$pkg"
-    cd -
 
     # Download in subshell to avoid risk of method modifying our
     # local vars
@@ -367,7 +366,6 @@ pkg_extract_sources() {
     # Download sources first to verify we can download them
     pkg_download "$pkg" "$path" "$version" >/dev/null
     )
-
 
     # Handle git repo next since we can't clone into a non-empty dir
     pkg_read_git_sources "$path" | while read -r rpath dirname; do
@@ -410,9 +408,7 @@ pkg_extract_sources() {
             cp "$path/$rpath" "$dest/$dirname"
         fi
     done
-    cd "$dest"
     run_hook post-extract "$pkg"
-    cd -
 }
 
 pkg_build_helper() {
@@ -685,12 +681,21 @@ action_download() {
 }
 
 _set_pkg_path() {
-    [ 0"$local_path" -eq 1 ] && path=$PWD || path="$(pkg_find "$pkg")" || path=$pkg
+    if [ "$pkg" = . ]  || [ 0"$local_path" -eq 1 ]; then
+        path=$PWD
+    elif [ -d "$pkg" ] ; then
+        path=$PWD/$pkg
+    else
+        path="$(pkg_find "$pkg" 2>/dev/null)"
+    fi
     pkg=$(basename "$pkg")
 }
 
 action_extract_sources() {
     [ $# -ne 0 ] || { local_path=1 && set -- "$(get_default_pkg)"; }
+    if [ -n "$PKG_DESTDIR" ] && [ /"${PKG_DESTDIR#/}" != "$PKG_DESTDIR" ] ; then
+        PKG_DESTDIR="$PWD/$PKG_DESTDIR"
+    fi
     for pkg do
         _set_pkg_path
         pkg_extract_sources "$pkg" "$path" "${PKG_DESTDIR:-"$PWD/$pkg"}"
