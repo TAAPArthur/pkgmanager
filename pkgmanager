@@ -380,13 +380,14 @@ pkg_extract_sources() {
         git clone --single-branch $extra_args "${rpath#git+}" "$dest/$dirname"
     done
 
-    create_working_dir
+    tmp="$PWD/.temp_extration_dir_$$"
+    mkdir -p "$tmp"
+    trap 'rm -rf $tmp' EXIT
+
     # Download in subshell to avoid risk of method modifying our
     # local vars
     ( pkg_download "$pkg" "$path" "$version" ) | while read -r fullpath dirname; do
-        mkdir -p "$dest/$dirname"
-        tmp="$WORKING_DIR/tmp_extraction_dir"
-        mkdir -p "$tmp"
+        [ -d "$dest/$dirname" ] || mkdir -p "$dest/$dirname"
 
         extract "$fullpath" "$tmp"
         # shellcheck disable=2144
