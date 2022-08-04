@@ -79,15 +79,15 @@ download_sources() {
             _filename="$_dir/$_filename"
         fi
         _fullpath="$_dest/$_filename"
-        if [ "$PKGMAN_FORCE" -eq 1 ] || [ ! -e "$_fullpath" ]; then
+        if [ "$PKGMAN_DOWNLOAD_CMD" != 0 ] && { [ "$PKGMAN_FORCE" -eq 1 ] || [ ! -e "$_fullpath" ]; }; then
             download_file "$_url" > "$_fullpath.tmp"
             mv "$_fullpath.tmp" "$_fullpath"
             info "Downloaded $_url"
         fi
         if [ -z "$_dir" ]; then
-            echo "$_fullpath" "."
+            printf "%s\t.\n" "$_fullpath"
         else
-            echo "$_fullpath" "$_dir"
+            printf "%s\t%s\n" "$_fullpath" "$_dir"
         fi
     done
 }
@@ -677,7 +677,6 @@ action_search() {
 action_download() {
     [ $# -ne 0 ] || set -- "$(get_default_pkg)"
     for pkg do
-        pkg=$1
         path=$(pkg_find "$pkg" 1)
         version=$(pkg_read_version "$path")
         pkg_download "$pkg" "$path" "$version"

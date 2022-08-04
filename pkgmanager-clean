@@ -1,0 +1,29 @@
+#!/bin/sh -e
+# Removes cached metadata for file that aren't currently installed
+
+PKGMAN_CACHE_DIR=${PKGMAN_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/pkgmanager}
+PKGMAN_SOURCE_CACHE_DIR=${PKGMAN_SOURCE_CACHE_DIR:-$PKGMAN_CACHE_DIR/sources}
+PKGMAN_BUILD_CACHE_DIR=$PKGMAN_CACHE_DIR/build
+
+[ -e "$PKGMAN_SOURCE_CACHE_DIR" ]
+export PKGMAN_DOWNLOAD_CMD=0
+
+TEMP_FILE=$(mktemp)
+trap "rm '$TEMP_FILE'" 0
+
+pkgman list | sed -e "s/\s/_/g" > "$TEMP_FILE"
+cd "$PKGMAN_BUILD_CACHE_DIR"
+
+find "." -type f | sed -e "s|\./||" -e 's/\.tar[\.a-z]*$//' | sort -u | comm -23 - "$TEMP_FILE" | while read -r file; do echo "$file"* ; done | xargs echo Deleting
+find "." -type f | sed -e "s|\./||" -e 's/\..*$//' | sort -u | comm -23 - "$TEMP_FILE" | while read -r file; do echo "$file"* ; done | xargs rm -f
+
+# shellcheck disable=SC2046
+pkgmanager download $(pkgman list | cut -f1) | cut -f1 | sort -u > "$TEMP_FILE"
+find "$PKGMAN_SOURCE_CACHE_DIR" -type f | sort -u | comm -23 - "$TEMP_FILE" | xargs echo Deleting
+find "$PKGMAN_SOURCE_CACHE_DIR" -type f | sort -u | comm -23 - "$TEMP_FILE" | xargs rm -f
+
+
+for dir in "$PKGMAN_SOURCE_CACHE_DIR/"*/; do
+    [ -d "$dir" ] && find "$PKGMAN_SOURCE_CACHE_DIR" -type d -exec rmdir {} \+ 2>/dev/null
+    break
+done || true
