@@ -30,12 +30,13 @@ or
 
 ## Package layout
 
-| Name    | Required | Comments/Blank lines | Format |
-| ------- | -------- | -------------------- | ------ |
-| build   | No\*     | N/A                  | Any executable format
-| depends | No       | Yes                  | pkg [label]
-| sources | No\*     | Yes                  | source [dest]
-| version | Yes      | Yes                  | upstream_version repository_version
+| Name       | Required | Comments/Blank lines | Format |
+| -------    | -------- | -------------------- | ------ |
+| build      | No\*     | N/A                  | Any executable format
+| depends    | No       | Yes                  | pkg [label]
+| sources    | No\*     | Yes                  | source [dest]
+| version    | Yes      | Yes                  | (upstream_version or "git") repository_version
+| downloadas | No       | No                   | alternative_package_name
 
 \* - Different value that upstream KISS
 Note that there are less required files than upstream kiss. We don't use checksums (by default; use a hook if you want them)

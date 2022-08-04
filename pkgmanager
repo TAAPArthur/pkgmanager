@@ -66,7 +66,11 @@ download_file() {
 }
 
 download_sources() {
-    _dest="$PKGMAN_SOURCE_CACHE_DIR/$1"
+    _alias="$1"
+    if [ -r "$2/downloadas" ]; then
+        read -r _alias _ < "$2/downloadas"
+    fi
+    _dest="$PKGMAN_SOURCE_CACHE_DIR/$_alias"
     mkdir -p "$_dest"
     while read -r _url _dir; do
         _filename="$(basename "$_url")"
@@ -337,7 +341,7 @@ pkg_download() {
             else
                 cat -
             fi
-        } | download_sources "$pkg"
+        } | download_sources "$pkg" "$path"
 }
 
 pkg_extract_sources() {
