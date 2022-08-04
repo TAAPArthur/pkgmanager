@@ -334,6 +334,7 @@ pkg_download() {
     pkg=$1
     path=$2
     version=$3
+    [ -s "$path/sources" ] || return 0
     pkg_read_sources "$path" | grep "^\w*://" |
         {
             if [ -x "$PKGMAN_SOURCE_FIX_FILE" ]; then
