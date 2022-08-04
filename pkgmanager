@@ -536,7 +536,7 @@ pkg_install_helper() {
 
     trap 'mv $PREVIOUS_MANIFEST $PREVIOUS_VERSION "$PKGMAN_METADATA_INSTALL_DIR/$pkg/" || rm -r "$PKGMAN_METADATA_INSTALL_DIR/$pkg"' EXIT
 
-    [ -w "$PKGMAN_ROOT" ]
+    [ -w "$PKGMAN_ROOT" ] || die "$PKGMAN_ROOT isn't writable"
     cp -RPf "$EXTRACTION_DIR"/* "$PKGMAN_ROOT" || {
         info "Failing back to manual copy"
         find "$EXTRACTION_DIR" | while read -r file; do
@@ -831,6 +831,7 @@ action_ext() {
     exec $path "$@"
 }
 
+[ $# -eq 0 ] && set -- --help
 action=$1
 shift
 case "$action" in
